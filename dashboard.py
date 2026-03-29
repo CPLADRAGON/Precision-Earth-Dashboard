@@ -3,16 +3,21 @@ import pandas as pd
 import numpy as np
 import os
 import re
+import plotly.graph_objects as go
 
 # ──────────────────────────────────────────────────────────────
 # CONFIG & HEADLESS THEME
 # ──────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Bioluminescent Nexus | Soil Health Monitor",
-    page_icon="🌱",
-    layout="wide",
-    initial_sidebar_state="collapsed",
+    page_icon="🌱", layout="wide", initial_sidebar_state="collapsed",
 )
+
+# Read query params
+params = st.query_params
+selected_plot = params.get("plot", "Sector Alpha-7")
+moisture_max = float(params.get("m_max", 45))
+active_tab = params.get("tab", "Overview")
 
 # Hide all Streamlit default UI
 st.markdown("""
@@ -33,151 +38,111 @@ def load_data():
     file_path = "plantation_soil_data.xlsm"
     try:
         df = pd.read_excel(file_path)
-        df['timestamp'] = pd.to_datetime(df['timestamp'], dayfirst=True)
+        if 'timestamp' in df.columns:
+            df['timestamp'] = pd.to_datetime(df['timestamp'], dayfirst=True)
+            if 'plot_id' not in df.columns: df['plot_id'] = "Sector Alpha-7"
+        else: raise Exception("No timestamp")
     except:
-        times = pd.date_range(end=pd.Timestamp.now(), periods=50, freq='H')
-        df = pd.DataFrame({
-            "timestamp": times,
-            "plot_id": ["Sector Alpha-7"] * 50,
-            "soil_moisture_pct": np.random.uniform(20, 30, 50),
-            "soil_temp_c": np.random.uniform(25, 33, 50),
-            "soil_ec_ds_m": np.random.uniform(1.0, 1.5, 50),
-            "soil_ph": np.random.uniform(6.0, 7.0, 50),
-            "rainfall_mm": np.random.choice([0, 0, 5, 0], 50),
-            "irrigation_mm": np.random.choice([0, 10, 0, 0], 50),
-        })
+        times = pd.date_range(end=pd.Timestamp.now(), periods=100, freq='H')
+        plots = ["Sector Alpha-7", "Sector Beta-2", "Sector Gamma-3"]
+        data = []
+        for p in plots:
+          for t in times:
+            data.append({"timestamp": t, "plot_id": p, "soil_moisture_pct": np.random.uniform(10, 50), "soil_temp_c": np.random.uniform(20, 40)})
+        df = pd.DataFrame(data)
     return df
 
-def get_live_metrics(df, plot_id="Sector Alpha-7"):
-    plot_df = df[df['plot_id'].str.contains(plot_id, case=False, na=False)].sort_values('timestamp')
-    latest = plot_df.iloc[-1] if not plot_df.empty else df.iloc[-1]
+def get_charts(df, m_min, m_max):
+    # Trends
+    fig_tr = go.Figure()
+    fig_tr.add_trace(go.Scatter(x=df['timestamp'], y=df['soil_moisture_pct'], name='Moisture', line=dict(color='#78DC77', width=3), fill='tozeroy', fillcolor='rgba(120, 220, 119, 0.1)'))
+    fig_tr.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=40, r=20, t=10, b=20), height=350,
+        xaxis=dict(showgrid=False, zeroline=False, tickfont=dict(color='#BECAB9')),
+        yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)', zeroline=False, tickfont=dict(color='#BECAB9')), showlegend=False)
     
-    anomalies = 0
-    if latest['soil_moisture_pct'] < 15 or latest['soil_moisture_pct'] > 45: anomalies += 1
-    if latest['soil_temp_c'] > 35: anomalies += 1
-
-    return {
-        "moisture": f"{latest['soil_moisture_pct']:.1f}",
-        "temp": f"{latest['soil_temp_c']:.1f}",
-        "ec": f"{latest['soil_ec_ds_m']:.2f}",
-        "ph": f"{latest['soil_ph']:.1f}",
-        "alerts": f"{anomalies:02}",
-        "rainfall": f"{df['rainfall_mm'].sum():.1f}",
-        "plot": plot_id
-    }
+    # Anomaly
+    fig_an = go.Figure()
+    anom = df[(df['soil_moisture_pct'] < m_min) | (df['soil_moisture_pct'] > m_max)]
+    norm = df[~df.index.isin(anom.index)]
+    fig_an.add_trace(go.Scatter(x=norm['timestamp'], y=norm['soil_moisture_pct'], mode='markers', name='Ok', marker=dict(color='rgba(120, 220, 119, 0.4)', size=7)))
+    fig_an.add_trace(go.Scatter(x=anom['timestamp'], y=anom['soil_moisture_pct'], mode='markers', name='Anomaly', marker=dict(color='#FFB4AB', size=12, symbol='x')))
+    fig_an.add_hline(y=m_min, line_dash="dash", line_color="#FFB4AB", opacity=0.3)
+    fig_an.add_hline(y=m_max, line_dash="dash", line_color="#FFB4AB", opacity=0.3)
+    fig_an.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', margin=dict(l=40, r=20, t=30, b=40), height=450,
+        xaxis=dict(showgrid=False, gridcolor='rgba(255,255,255,0.05)', tickfont=dict(color='#BECAB9')),
+        yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)', tickfont=dict(color='#BECAB9')),
+        legend=dict(font=dict(color='#BECAB9'), orientation="h", y=1.05, x=1, xanchor="right"))
+    
+    return fig_tr.to_html(include_plotlyjs='cdn', full_html=False), fig_an.to_html(include_plotlyjs='cdn', full_html=False)
 
 # ──────────────────────────────────────────────────────────────
-# SPA TEMPLATE GENERATOR
+# DASHBOARD GENERATOR
 # ──────────────────────────────────────────────────────────────
-def build_spa_html(metrics):
+def build_dashboard_html(df, plot_id, m_max, tab):
     base_path = "stitch ui/stitch"
-    
-    # Read the 3 core templates
-    overview_raw = open(os.path.join(base_path, "overview_dashboard", "code.html"), "r", encoding="utf-8").read()
-    trends_raw = open(os.path.join(base_path, "trends_analysis", "code.html"), "r", encoding="utf-8").read()
-    anomaly_raw = open(os.path.join(base_path, "anomaly_detection", "code.html"), "r", encoding="utf-8").read()
-    
-    # Extract the common <head> and <body> structure from Overview
-    # We'll use Overview as the master frame
-    head = re.search(r'<head>(.*?)</head>', overview_raw, re.DOTALL).group(1)
-    sidebar = re.search(r'<aside[^>]*>(.*?)</aside>', overview_raw, re.DOTALL).group(1)
-    header = re.search(r'<header[^>]*>(.*?)</header>', overview_raw, re.DOTALL).group(1)
-    
-    # Extract the <main> content for each tab
-    overview_content = re.search(r'<main[^>]*>(.*?)</main>', overview_raw, re.DOTALL).group(1)
-    # Remove the header from the content as we have a shared one
-    overview_content = re.sub(r'<header.*?</header>', '', overview_content, flags=re.DOTALL)
-    
-    trends_content = re.search(r'<main[^>]*>(.*?)</main>', trends_raw, re.DOTALL).group(1)
-    trends_content = re.sub(r'<header.*?</header>', '', trends_content, flags=re.DOTALL)
-    
-    anomaly_content = re.search(r'<main[^>]*>(.*?)</main>', anomaly_raw, re.DOTALL).group(1)
-    anomaly_content = re.sub(r'<header.*?</header>', '', anomaly_content, flags=re.DOTALL)
+    m_min = 15
+    available_plots = df['plot_id'].unique()
+    if plot_id not in available_plots: plot_id = available_plots[0]
+    plot_df = df[df['plot_id'] == plot_id].sort_values('timestamp')
+    latest = plot_df.iloc[-1] if not plot_df.empty else {"soil_moisture_pct": 24.8, "soil_temp_c": 32.5}
 
-    # Inject Live Data into Overview
-    overview_content = re.sub(r'24\.8<span class="text-lg opacity-60 ml-1">\%</span>', f'{metrics["moisture"]}<span class="text-lg opacity-60 ml-1">%</span>', overview_content)
-    overview_content = re.sub(r'32\.5<span class="text-lg opacity-60 ml-1">°C</span>', f'{metrics["temp"]}<span class="text-lg opacity-60 ml-1">°C</span>', overview_content)
-    overview_content = overview_content.replace('Sector Alpha-7 Overview', f'{metrics["plot"]} Overview')
+    # Template Logic
+    tab_map = {"Overview": "overview_dashboard", "Trends": "trends_analysis", "Anomaly": "anomaly_detection"}
+    folder = tab_map.get(tab, "overview_dashboard")
+    raw = open(os.path.join(base_path, folder, "code.html"), "r", encoding="utf-8").read()
 
-    # Construct SPA
-    spa_html = f"""
+    # Extraction
+    head = re.search(r'<head>(.*?)</head>', raw, re.DOTALL).group(1)
+    sidebar = re.search(r'<aside[^>]*>(.*?)</aside>', raw, re.DOTALL).group(1)
+    header = re.search(r'<header[^>]*>(.*?)</header>', raw, re.DOTALL).group(1)
+    main = re.search(r'<main[^>]*>(.*?)</main>', raw, re.DOTALL).group(1)
+    main = re.sub(r'<header.*?</header>', '', main, flags=re.DOTALL) # Clean duplicate
+
+    # Sidebar Injection
+    plots_html = "".join([f'<option value="{p}" {"selected" if p == plot_id else ""}>{p}</option>' for p in available_plots])
+    sidebar = re.sub(r'<select[^>]*>.*?</select>', f'<select id="plot-master" class="w-full bg-surface-container border-none text-sm rounded-lg text-on-surface py-2">{plots_html}</select>', sidebar, flags=re.DOTALL)
+    sidebar = re.sub(r'<input[^>]*type="range"[^>]*>', f'<input id="m-max-slider" type="range" min="0" max="100" value="{m_max}" class="w-full accent-primary h-1 bg-surface-container rounded-lg appearance-none cursor-pointer">', sidebar)
+
+    # Content Injection
+    if tab == "Overview":
+        main = re.sub(r'24\.8<span[^>]*>\%</span>', f'{latest["soil_moisture_pct"]:.1f}<span class="text-lg opacity-60 ml-1">%</span>', main)
+        main = re.sub(r'32\.5<span[^>]*>°C</span>', f'{latest["soil_temp_c"]:.1f}<span class="text-lg opacity-60 ml-1">°C</span>', main)
+        main = main.replace('Sector Alpha-7 Overview', f'{plot_id} Overview').replace('Sector Alpha-7 Monitoring', f'{plot_id} Monitoring')
+    
+    tr_html, an_html = get_charts(plot_df, m_min, m_max)
+    chart_html = tr_html if tab == "Trends" else (an_html if tab == "Anomaly" else "")
+    if chart_html:
+        main += f'<div id="chart-mount" style="width:100%; min-height:450px; margin-top:20px;">{chart_html}</div>'
+
+    html = f"""
     <!DOCTYPE html>
     <html class="dark" lang="en">
-    <head>
-        {head}
-        <style>
-            .tab-content {{ display: none; }}
-            .tab-content.active {{ display: block; }}
-            .nav-item.active {{ background: rgba(50, 53, 60, 0.6); color: #78DC77; border-left: 2px solid #78DC77; font-weight: bold; }}
-        </style>
-    </head>
+    <head>{head}<style>main{{padding-top:80px; height:100vh; overflow-y:auto;}} nav a.active-link{{background:rgba(50,53,60,0.6); color:#78DC77; border-left:2px solid #78DC77; font-weight:bold;}}</style></head>
     <body class="bg-background text-on-surface font-body overflow-hidden">
-        <aside class="bg-[#191C22] h-screen w-64 fixed left-0 top-0 overflow-y-auto z-50 flex flex-col py-6 font-['Space_Grotesk'] shadow-none">
-            {sidebar}
-        </aside>
-        <main class="ml-64 min-h-screen">
-            <header class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-[#101319]/80 backdrop-blur-xl flex justify-between items-center h-20 px-8 border-b border-white/5 shadow-2xl shadow-black/40">
-                {header}
-            </header>
-            <div id="tab-Overview" class="tab-content active pt-20">{overview_content}</div>
-            <div id="tab-Trends" class="tab-content pt-20">{trends_content}</div>
-            <div id="tab-Rainfall" class="tab-content pt-20">{trends_content}</div>
-            <div id="tab-Anomaly" class="tab-content pt-20">{anomaly_content}</div>
-            <div id="tab-Correlations" class="tab-content pt-20">{overview_content}</div>
-        </main>
-
+        <aside class="bg-[#191C22] h-screen w-64 fixed left-0 top-0 overflow-y-auto z-50 flex flex-col py-6">{sidebar}</aside>
+        <header class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-[#101319]/90 backdrop-blur-xl flex justify-between items-center h-20 px-8 border-b border-white/5">{header}</header>
+        <main class="ml-64">{main}</main>
         <script>
-            function showTab(tabName) {{
-                // Hide all
-                document.querySelectorAll('.tab-content').forEach(d => d.classList.remove('active'));
-                document.querySelectorAll('nav a').forEach(a => a.classList.remove('active', 'bg-[#32353C]/60', 'text-[#78DC77]', 'border-l-2', 'border-[#78DC77]', 'font-bold'));
+            window.onload = () => {{
+                const nav = document.querySelectorAll('nav a');
+                const t = "{tab}"; const p = "{plot_id}"; const m = "{m_max}";
+                const go = (target) => window.top.location.href = `?tab=${{target}}&plot=${{p}}&m_max=${{m}}`;
                 
-                // Show selected
-                const target = document.getElementById('tab-' + tabName);
-                if (target) target.classList.add('active');
+                if (nav[0]) {{ nav[0].onclick = () => go('Overview'); if (t=='Overview') nav[0].classList.add('active-link'); }}
+                if (nav[1]) {{ nav[1].onclick = () => go('Trends'); if (t=='Trends') nav[1].classList.add('active-link'); }}
+                if (nav[3]) {{ nav[3].onclick = () => go('Anomaly'); if (t=='Anomaly') nav[3].classList.add('active-link'); }}
                 
-                // Update Sidebar
-                const links = document.querySelectorAll('nav a');
-                links.forEach(a => {{
-                    if (a.innerText.includes(tabName) || (tabName === "Rainfall" && a.innerText.includes("Rainfall"))) {{
-                        a.classList.add('bg-[#32353C]/60', 'text-[#78DC77]', 'border-l-2', 'border-[#78DC77]', 'font-bold');
-                    }}
-                }});
-            }}
-
-            // Setup Click Listeners
-            document.addEventListener('DOMContentLoaded', () => {{
-                const navMap = {{
-                    "Overview": "Overview",
-                    "Trends": "Trends",
-                    "Rainfall": "Rainfall",
-                    "Anomaly": "Anomaly",
-                    "Correlations": "Correlations"
-                }};
-                
-                document.querySelectorAll('nav a').forEach(a => {{
-                    a.href = "javascript:void(0)";
-                    a.onclick = (e) => {{
-                        const text = a.innerText.trim();
-                        if (text.includes("Overview")) showTab("Overview");
-                        if (text.includes("Trends")) showTab("Trends");
-                        if (text.includes("Rainfall")) showTab("Rainfall");
-                        if (text.includes("Anomaly")) showTab("Anomaly");
-                        if (text.includes("Correlations")) showTab("Correlations");
-                    }};
-                }});
-            }});
+                const sel = document.getElementById('plot-master');
+                const sli = document.getElementById('m-max-slider');
+                const update = () => window.top.location.href = `?tab=${{t}}&plot=${{sel.value}}&m_max=${{sli.value}}`;
+                if (sel) sel.onchange = update;
+                if (sli) sli.onchange = update;
+            }};
         </script>
     </body>
     </html>
     """
-    return spa_html
+    return html
 
-# ──────────────────────────────────────────────────────────────
-# MAIN APP
-# ──────────────────────────────────────────────────────────────
 df = load_data()
-metrics = get_live_metrics(df)
-final_html = build_spa_html(metrics)
-
-st.components.v1.html(final_html, height=1200, scrolling=False)
+st.components.v1.html(build_dashboard_html(df, selected_plot, moisture_max, active_tab), height=1200, scrolling=False)
