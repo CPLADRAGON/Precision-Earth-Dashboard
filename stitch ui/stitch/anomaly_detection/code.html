@@ -199,49 +199,7 @@
 </div>
 </div>
 <!-- Futuristic Scatter Plot Canvas Simulation -->
-<div class="h-[400px] w-full relative border-l border-b border-white/10 mt-4 font-label">
-<!-- Y-Axis Labels -->
-<div class="absolute -left-8 h-full flex flex-col justify-between text-[10px] text-on-surface-variant/50 py-2">
-<span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span>
-</div>
-<!-- Threshold Lines -->
-<div class="absolute top-[20%] w-full h-px bg-error/20 border-t border-dashed border-error/40 flex items-center justify-end">
-<span class="text-[8px] text-error font-bold uppercase mr-2 -mt-4">Critical Threshold</span>
-</div>
-<div class="absolute top-[35%] w-full h-px bg-tertiary/20 border-t border-dashed border-tertiary/40 flex items-center justify-end">
-<span class="text-[8px] text-tertiary font-bold uppercase mr-2 -mt-4">Warning Zone</span>
-</div>
-<!-- Plot Points (Simulated with absolute divs) -->
-<!-- Normal Points -->
-<div class="absolute left-[10%] bottom-[40%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<div class="absolute left-[15%] bottom-[35%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<div class="absolute left-[22%] bottom-[42%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<div class="absolute left-[28%] bottom-[38%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<div class="absolute left-[35%] bottom-[45%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<div class="absolute left-[40%] bottom-[30%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<div class="absolute left-[48%] bottom-[48%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<div class="absolute left-[55%] bottom-[41%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<div class="absolute left-[62%] bottom-[33%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<div class="absolute left-[70%] bottom-[46%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<div class="absolute left-[80%] bottom-[39%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<div class="absolute left-[85%] bottom-[43%] w-2 h-2 rounded-full bg-primary/30 blur-[1px]"></div>
-<!-- Anomalous Points (Glowing Red X) -->
-<div class="absolute left-[25%] bottom-[82%] flex items-center justify-center animate-bounce duration-[3000ms]">
-<span class="material-symbols-outlined text-error anomaly-marker text-lg" data-icon="close" style="font-variation-settings: 'FILL' 1">close</span>
-<div class="absolute w-6 h-6 rounded-full bg-error/10 animate-pulse"></div>
-</div>
-<div class="absolute left-[58%] bottom-[74%] flex items-center justify-center">
-<span class="material-symbols-outlined text-error anomaly-marker text-lg" data-icon="close" style="font-variation-settings: 'FILL' 1">close</span>
-<div class="absolute w-6 h-6 rounded-full bg-error/10 animate-pulse"></div>
-</div>
-<div class="absolute left-[78%] bottom-[68%] flex items-center justify-center opacity-80">
-<span class="material-symbols-outlined text-tertiary anomaly-marker text-lg" data-icon="close" style="font-variation-settings: 'FILL' 1">close</span>
-</div>
-<!-- X-Axis Labels -->
-<div class="absolute -bottom-8 w-full flex justify-between text-[10px] text-on-surface-variant/50 px-2">
-<span>08:00</span><span>09:00</span><span>10:00</span><span>11:00</span><span>12:00</span>
-</div>
-</div>
+<div id="chart-mount" class="h-[400px] w-full relative mt-4"></div>
 </section>
 <!-- Side Stats/AI Insights -->
 <section class="col-span-12 lg:col-span-4 space-y-6">

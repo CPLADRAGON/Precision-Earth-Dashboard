@@ -304,44 +304,7 @@
 </div>
 </div>
 <!-- Abstract Visualization of a Chart -->
-<div class="relative h-64 w-full mt-4">
-<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 1000 200">
-<!-- Moisture Path -->
-<path d="M0,150 Q100,140 200,160 T400,130 T600,140 T800,110 T1000,120" fill="none" stroke="url(#gradient-primary)" stroke-width="3"></path>
-<path d="M0,150 Q100,140 200,160 T400,130 T600,140 T800,110 T1000,120 L1000,200 L0,200 Z" fill="url(#fill-primary)"></path>
-<!-- Temp Path -->
-<path d="M0,100 Q150,110 300,80 T600,90 T900,60 T1000,70" fill="none" stroke="url(#gradient-tertiary)" stroke-dasharray="8 4" stroke-width="2"></path>
-<defs>
-<lineargradient id="gradient-primary" x1="0" x2="1" y1="0" y2="0">
-<stop offset="0%" stop-color="#78dc77"></stop>
-<stop offset="100%" stop-color="#4caf50"></stop>
-</lineargradient>
-<lineargradient id="fill-primary" x1="0" x2="0" y1="0" y2="1">
-<stop offset="0%" stop-color="#78dc77" stop-opacity="0.15"></stop>
-<stop offset="100%" stop-color="#78dc77" stop-opacity="0"></stop>
-</lineargradient>
-<lineargradient id="gradient-tertiary" x1="0" x2="1" y1="0" y2="0">
-<stop offset="0%" stop-color="#ffb1c7"></stop>
-<stop offset="100%" stop-color="#f26f9d"></stop>
-</lineargradient>
-</defs>
-</svg>
-<!-- Hover Interaction Point -->
-<div class="absolute top-[110px] left-[800px] flex flex-col items-center group/point">
-<div class="w-4 h-4 rounded-full bg-primary ring-8 ring-primary/10 transition-all group-hover/point:scale-150 group-hover/point:ring-primary/20"></div>
-<div class="absolute bottom-6 bg-surface-container-highest text-[10px] px-3 py-1.5 rounded-lg border border-primary/20 whitespace-nowrap opacity-0 group-hover/point:opacity-100 transition-opacity">
-<span class="font-bold text-primary">24.8%</span> at 14:00
-                            </div>
-</div>
-<!-- Grid Lines -->
-<div class="absolute inset-0 grid grid-cols-6 pointer-events-none">
-<div class="border-r border-white/5 h-full"></div>
-<div class="border-r border-white/5 h-full"></div>
-<div class="border-r border-white/5 h-full"></div>
-<div class="border-r border-white/5 h-full"></div>
-<div class="border-r border-white/5 h-full"></div>
-</div>
-</div>
+<div id="chart-mount" class="relative h-64 w-full mt-4"></div>
 <!-- Chart X-Axis Labels -->
 <div class="flex justify-between mt-6 text-[10px] font-bold text-on-surface-variant uppercase tracking-widest px-2">
 <span>08:00</span>

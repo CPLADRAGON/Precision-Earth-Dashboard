@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Historical Trends | Precision Earth</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-surface": "#2f312e",
+                        "on-tertiary-fixed": "#410003",
+                        "secondary-fixed": "#d4e3ff",
+                        "surface-container-low": "#f4f4ef",
+                        "on-secondary-fixed": "#001c3a",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#1a1c1a",
+                        "on-primary-fixed-variant": "#23501e",
+                        "tertiary-fixed-dim": "#ffb3ac",
+                        "on-secondary": "#ffffff",
+                        "surface-container": "#eeeeea",
+                        "inverse-on-surface": "#f1f1ed",
+                        "primary-container": "#2d5a27",
+                        "error": "#ba1a1a",
+                        "secondary-container": "#54a0fe",
+                        "surface-dim": "#dadad6",
+                        "error-container": "#ffdad6",
+                        "inverse-primary": "#a1d494",
+                        "on-tertiary-container": "#ffaea6",
+                        "primary-fixed": "#bcf0ae",
+                        "tertiary": "#79000b",
+                        "surface": "#f9faf5",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f9faf5",
+                        "outline": "#72796e",
+                        "primary": "#154212",
+                        "on-background": "#1a1c1a",
+                        "outline-variant": "#c2c9bb",
+                        "tertiary-container": "#a40213",
+                        "surface-tint": "#3b6934",
+                        "on-secondary-fixed-variant": "#004786",
+                        "on-secondary-container": "#003567",
+                        "tertiary-fixed": "#ffdad6",
+                        "secondary-fixed-dim": "#a5c8ff",
+                        "primary-fixed-dim": "#a1d494",
+                        "surface-container-high": "#e8e8e4",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#9dd090",
+                        "surface-variant": "#e2e3de",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#42493e",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#002201",
+                        "surface-container-highest": "#e2e3de",
+                        "on-tertiary-fixed-variant": "#930010",
+                        "secondary": "#005faf",
+                        "background": "#f9faf5"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3 {
+            font-family: 'Manrope', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen">
+<!-- SideNavBar Anchor -->
+<aside class="fixed left-0 top-0 h-full w-72 bg-zinc-900 flex flex-col p-6 border-r border-zinc-800 z-50">
+<div class="mb-10">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-green-500">potted_plant</span>
+</div>
+<div>
+<h1 class="text-lg font-bold text-green-500 leading-none">The Precision Earth</h1>
+<p class="text-xs text-zinc-400 mt-1">Silty Soil Monitor</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-2">
+<!-- Executive Overview (Inactive) -->
+<a class="flex items-center gap-3 px-4 py-3 text-stone-400 hover:bg-zinc-800 transition-all duration-200 active:translate-x-1" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-medium">Executive Overview</span>
+</a>
+<!-- Historical Trends (Active) -->
+<a class="flex items-center gap-3 px-4 py-3 bg-green-900/30 text-green-300 font-semibold rounded-lg active:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-medium">Historical Trends</span>
+</a>
+<!-- Action Center (Inactive) -->
+<a class="flex items-center gap-3 px-4 py-3 text-stone-400 hover:bg-zinc-800 transition-all duration-200 active:translate-x-1" href="#">
+<span class="material-symbols-outlined">assignment_late</span>
+<span class="font-medium">Action Center</span>
+</a>
+<!-- Future Upgrades (Inactive) -->
+<a class="flex items-center gap-3 px-4 py-3 text-stone-400 hover:bg-zinc-800 transition-all duration-200 active:translate-x-1" href="#">
+<span class="material-symbols-outlined">rocket_launch</span>
+<span class="font-medium">Future Upgrades</span>
+</a>
+</nav>
+<div class="mt-auto border-t border-zinc-800 pt-6 space-y-2">
+<button class="w-full py-3 px-4 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors mb-4">
+                Export Soil Report
+            </button>
+<a class="flex items-center gap-3 px-4 py-2 text-stone-400 hover:bg-zinc-800 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-sm">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-stone-400 hover:bg-zinc-800 transition-all rounded-lg" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-sm">Sign Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-72 p-10 max-w-7xl mx-auto">
+<!-- Header Section -->
+<header class="mb-12">
+<div class="flex justify-between items-end">
+<div>
+<h2 class="text-4xl font-extrabold tracking-tight text-stone-100 mb-2">Historical Telemetry</h2>
+<p class="text-stone-400 text-lg max-w-2xl">Visualizing long-term moisture retention and atmospheric correlation across the Silty Soil sectors.</p>
+</div>
+<div class="flex gap-4">
+<div class="px-4 py-2 bg-zinc-900 rounded-lg flex items-center gap-3">
+<span class="material-symbols-outlined text-green-500">calendar_month</span>
+<span class="text-sm font-medium">Last 30 Days</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Dashboard Grid -->
+<div class="space-y-12">
+<!-- Section 1: Dual-Axis Chart & Interpretation -->
+<section class="grid grid-cols-12 gap-8">
+<!-- Large Chart Placeholder -->
+<div class="col-span-8 bg-zinc-900 rounded-2xl p-8 relative overflow-hidden group">
+<div class="flex justify-between items-center mb-10">
+<h3 class="text-xl font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-blue-400">water_drop</span>
+                            Dual-Axis Moisture vs. Rainfall
+                        </h3>
+<div class="flex gap-4 text-xs font-bold uppercase tracking-widest">
+<span class="flex items-center gap-2 text-blue-400"><div class="w-3 h-1 bg-blue-400"></div> Rainfall (mm)</span>
+<span class="flex items-center gap-2 text-green-500"><div class="w-3 h-1 bg-green-500"></div> Soil Moisture (%)</span>
+</div>
+</div>
+<!-- Chart Simulation Area -->
+<div class="h-80 w-full flex items-end gap-1 relative border-l border-b border-zinc-800 pb-2">
+<!-- Simulated Data Waves -->
+<div class="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
+<span class="material-symbols-outlined text-[200px] text-zinc-700">trending_up</span>
+</div>
+<!-- Visualizing the "Failure" Correlation -->
+<div class="flex-1 flex flex-col justify-end gap-1 group/bar h-full">
+<div class="w-full bg-blue-500/20 h-0 transition-all duration-500 group-hover/bar:bg-blue-500/40"></div>
+<div class="w-full bg-green-500 h-[10%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-blue-500/20 h-0"></div>
+<div class="w-full bg-green-500 h-[8%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-blue-600 h-[60%] rounded-t-sm shadow-[0_0_15px_rgba(37,99,235,0.3)]"></div>
+<div class="w-full bg-green-500 h-[45%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-blue-500/20 h-0"></div>
+<div class="w-full bg-green-500 h-[38%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-blue-500/20 h-0"></div>
+<div class="w-full bg-green-500 h-[28%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-blue-500/20 h-0"></div>
+<div class="w-full bg-green-500 h-[18%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-blue-500/20 h-0"></div>
+<div class="w-full bg-green-500 h-[12%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-blue-600 h-[85%] rounded-t-sm shadow-[0_0_15px_rgba(37,99,235,0.3)]"></div>
+<div class="w-full bg-green-500 h-[65%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-blue-500/20 h-0"></div>
+<div class="w-full bg-green-500 h-[50%] rounded-t-sm"></div>
+</div>
+<div class="flex-1 flex flex-col justify-end gap-1 h-full">
+<div class="w-full bg-blue-500/20 h-0"></div>
+<div class="w-full bg-green-500 h-[40%] rounded-t-sm"></div>
+</div>
+</div>
+<div class="flex justify-between mt-4 text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+<span>OCT 01</span>
+<span>OCT 08</span>
+<span>OCT 15</span>
+<span>OCT 22</span>
+<span>OCT 30</span>
+</div>
+</div>
+<!-- Info Box (Editorial Style) -->
+<div class="col-span-4 flex flex-col gap-6">
+<div class="bg-zinc-900 border-l-4 border-amber-500 p-6 rounded-r-2xl">
+<div class="flex items-center gap-2 mb-4 text-amber-500">
+<span class="material-symbols-outlined">warning</span>
+<span class="font-bold uppercase tracking-wider text-xs">Critical Insight</span>
+</div>
+<h4 class="text-lg font-bold mb-3 text-stone-100 leading-tight">Irrigation Anomaly Detected</h4>
+<p class="text-stone-400 text-sm leading-relaxed mb-4">
+                            The chart reveals a direct dependency on natural rainfall. Notice how moisture levels <span class="text-green-400 font-semibold">only</span> spike immediately following blue rainfall bars. 
+                        </p>
+<p class="text-stone-400 text-sm leading-relaxed">
+                            During dry intervals, there is zero moisture recovery despite scheduled irrigation cycles. This suggests a mechanical failure in the sector pump or a blockage in the silty soil drainage network.
+                        </p>
+</div>
+<div class="bg-blue-900/10 border border-blue-900/30 p-6 rounded-2xl">
+<h5 class="text-blue-300 font-bold text-xs uppercase tracking-widest mb-2">Recommended Action</h5>
+<p class="text-stone-400 text-sm">Deploy field engineer to Sector 4G to inspect valve actuators and pressure transducers.</p>
+</div>
+</div>
+</section>
+<!-- Section 2: Soil Status Timeline Heatmap -->
+<section class="grid grid-cols-12 gap-8">
+<!-- Explanation Panel -->
+<div class="col-span-3">
+<div class="sticky top-10">
+<h3 class="text-xl font-bold mb-4">Saturation Lifecycle</h3>
+<p class="text-zinc-400 text-sm mb-6 leading-relaxed">This heatmap tracks the daily average saturation of the upper 12" soil layer across the plantation's 12 sub-sectors.</p>
+<div class="space-y-4">
+<div class="flex items-center gap-3">
+<div class="w-4 h-4 rounded-sm bg-blue-600"></div>
+<div class="flex-1">
+<p class="text-xs font-bold text-stone-200">Wet (&gt;35%)</p>
+<p class="text-[10px] text-zinc-500">High leaching risk</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-4 h-4 rounded-sm bg-green-500"></div>
+<div class="flex-1">
+<p class="text-xs font-bold text-stone-200">Normal (10-35%)</p>
+<p class="text-[10px] text-zinc-500">Optimal growth zone</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-4 h-4 rounded-sm bg-red-900"></div>
+<div class="flex-1">
+<p class="text-xs font-bold text-stone-200">Drought (&lt;10%)</p>
+<p class="text-[10px] text-zinc-500">Permanent wilting point</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Heatmap Grid -->
+<div class="col-span-9 bg-zinc-900/50 rounded-2xl p-8 border border-zinc-800/50">
+<div class="flex justify-between items-center mb-8">
+<h4 class="text-sm font-bold uppercase tracking-widest text-zinc-500">Sector Saturation Map (30 Day View)</h4>
+<div class="text-[10px] font-mono text-zinc-600">UNIT: VWC% (Volumetric Water Content)</div>
+</div>
+<div class="grid grid-cols-30 gap-1.5 h-64">
+<!-- Sector labels would go here, row by row -->
+<!-- Row 1 (Simulated) -->
+<div class="contents">
+<!-- Generate a row of colored blocks -->
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-blue-600 rounded-sm"></div>
+<div class="w-full h-full bg-blue-600 rounded-sm"></div>
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-red-900 rounded-sm"></div>
+<div class="w-full h-full bg-red-900 rounded-sm"></div>
+<div class="w-full h-full bg-red-900 rounded-sm"></div>
+<div class="w-full h-full bg-red-900 rounded-sm"></div>
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-blue-600 rounded-sm"></div>
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-green-500 rounded-sm"></div>
+<div class="w-full h-full bg-red-900 rounded-sm"></div>
+<!-- ... and so on to fill the grid ... -->
+<!-- CSS Grid for 30 columns needs to be defined -->
+</div>
+</div>
+<!-- Layout Fix for Heatmap Visualization -->
+<div class="flex flex-col gap-2 mt-2">
+<!-- Repeated rows to simulate the heatmap visual -->
+<div class="flex gap-1 h-6">
+<div class="text-[9px] w-12 flex-shrink-0 text-zinc-600 font-bold uppercase py-1">SEC A</div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90 hover:opacity-100 transition-opacity"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+</div>
+<div class="flex gap-1 h-6">
+<div class="text-[9px] w-12 flex-shrink-0 text-zinc-600 font-bold uppercase py-1">SEC B</div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+</div>
+<div class="flex gap-1 h-6">
+<div class="text-[9px] w-12 flex-shrink-0 text-zinc-600 font-bold uppercase py-1">SEC C</div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+</div>
+<div class="flex gap-1 h-6">
+<div class="text-[9px] w-12 flex-shrink-0 text-zinc-600 font-bold uppercase py-1">SEC D</div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-blue-600 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-red-900 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+<div class="flex-1 bg-green-500 rounded-sm opacity-90"></div>
+</div>
+</div>
+<div class="mt-8 flex items-center justify-center gap-10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-zinc-600 text-sm">history_edu</span>
+<span class="text-[10px] text-zinc-500 font-medium">Data collected from 48 localized soil probes.</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-zinc-600 text-sm">update</span>
+<span class="text-[10px] text-zinc-500 font-medium">Last calculated 14 minutes ago.</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Asymmetric Footer Insight -->
+<footer class="mt-16 flex justify-between items-start border-t border-zinc-800 pt-10">
+<div class="max-w-md">
+<p class="text-zinc-500 text-sm italic">
+                    "Historical trends allow us to see through the immediate noise of weather and uncover the underlying mechanical reliability of the plantation's infrastructure."
+                </p>
+<p class="mt-2 text-zinc-400 font-bold text-xs">— Chief Agronomist Report, Q3</p>
+</div>
+<div class="flex gap-12">
+<div>
+<span class="block text-3xl font-black text-green-500">14.2%</span>
+<span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Avg. Weekly Loss</span>
+</div>
+<div>
+<span class="block text-3xl font-black text-blue-500">22mm</span>
+<span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Total Precip</span>
+</div>
+</div>
+</footer>
+</main>
+</body></html>
