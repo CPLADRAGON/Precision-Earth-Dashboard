@@ -1,0 +1,8 @@
+- [x] Modernize dashboard design to `stitch_new`
+- [x] Fix `st_html` TypeError regression across all tabs
+- [x] Restore AI Farm Assistant chat interface
+- [x] Clean up redundant legacy scripts and temporary research files
+- [ ] Install Playwright in `cs3237` environment
+- [ ] Run automated UI verification for all 4 dashboard tabs
+- [ ] Address Plotly `use_container_width` deprecation warning
+- [ ] Final functional audit of the Gemini chat assistant's soil advice

@@ -3,9 +3,25 @@ import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-from google import genai
-from google.genai import types
+try:
+    from google import genai
+    from google.genai import types
+    SDK_VERSION = "new"
+except ImportError:
+    try:
+        import google.generativeai as genai
+        SDK_VERSION = "legacy"
+    except ImportError:
+        SDK_VERSION = None
 import os
+
+import textwrap
+
+def st_html(html_str, **kwargs):
+    # Strip leading/trailing whitespace and drop empty lines to avoid Markdown code blocks
+    cleaned = '\n'.join([line.strip() for line in html_str.split('\n') if line.strip()])
+    # We force unsafe_allow_html=True internally
+    st.markdown(cleaned, unsafe_allow_html=True)
 
 # ── PAGE CONFIG ───────────────────────────────────────────────
 st.set_page_config(
@@ -16,7 +32,10 @@ st.set_page_config(
 )
 
 # ── CONSTANTS ─────────────────────────────────────────────────
-GEMINI_API_KEY = "AIzaSyBXQZwWuXX0vf6HQBTBXoFcCs3ZkGux23M"
+try:
+    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+except (FileNotFoundError, KeyError):
+    GEMINI_API_KEY = "AIzaSyBXQZwWuXX0vf6HQBTBXoFcCs3ZkGux23M"
 WILTING_POINT = 10.0
 FIELD_CAPACITY = 35.0
 EC_STRESS = 4.0
@@ -25,181 +44,251 @@ PH_ALK  = 7.5
 
 # ── GLOBAL CSS ────────────────────────────────────────────────
 st.markdown("""
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+        corePlugins: { preflight: false }, // Prevent Tailwind from breaking Streamlit's native buttons & sliders
+        theme: {
+            extend: {
+                colors: {
+                    "surface-container-low": "#1a1c1a",
+                    "error-container": "#93000a",
+                    "tertiary": "#ffb3ac",
+                    "background": "#0e110e",
+                    "tertiary-container": "#79000b",
+                    "on-error": "#690005",
+                    "secondary": "#a5c8ff",
+                    "surface-variant": "#42493e",
+                    "on-error-container": "#ffdad6",
+                    "surface-bright": "#353a34",
+                    "surface": "#1a1c1a",
+                    "inverse-primary": "#3b6934",
+                    "outline": "#8c9388",
+                    "surface-container-lowest": "#0a0c0a",
+                    "secondary-container": "#004786",
+                    "on-surface-variant": "#c2c9bb",
+                    "surface-container-highest": "#313530",
+                    "primary-fixed-dim": "#a1d494",
+                    "on-tertiary-container": "#ffdad6",
+                    "on-primary-fixed": "#002201",
+                    "on-tertiary": "#410003",
+                    "tertiary-fixed": "#ffdad6",
+                    "surface-tint": "#a1d494",
+                    "on-primary-fixed-variant": "#23501e",
+                    "inverse-on-surface": "#1a1c1a",
+                    "primary-container": "#23501e",
+                    "primary-fixed": "#bcf0ae",
+                    "surface-dim": "#111411",
+                    "surface-container-high": "#262b26",
+                    "secondary-fixed-dim": "#a5c8ff",
+                    "outline-variant": "#42493e",
+                    "surface-container": "#1e221e",
+                    "on-surface": "#e2e3de",
+                    "error": "#ffb4ab",
+                    "on-background": "#e2e3de",
+                    "on-primary": "#043907",
+                    "primary": "#a1d494"
+                }
+            }
+        }
+    }
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+/* UI/UX Animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); filter: blur(4px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.animate-enter { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
 
-/* Global reset */
-*, body, [class*="st-"] { font-family: 'Inter', sans-serif !important; }
-h1, h2, h3, h4 { font-family: 'Manrope', sans-serif !important; }
+/* MD3 Tokens & Global resets */
+:root {
+    --primary: #a1d494;
+    --primary-container: #23501e;
+    --on-primary-container: #9dd090;
+    --surface-container-low: #1a1c1a;
+    --surface-container-lowest: #0a0c0a;
+    --surface-container-highest: #2b2f2a;
+    --error-container: #93000a;
+    --on-error-container: #ffdad6;
+    --tertiary-container: #79000b;
+    --on-tertiary-container: #ffdad6;
+    --outline-variant: rgba(66,73,62,0.3);
+    --on-surface-variant: #c2c9bb;
+    --on-surface: #e2e3de;
+}
+
+*, body, [class*="st-"] { font-family: 'Inter', sans-serif !important; letter-spacing: -0.01em; }
+h1, h2, h3, h4, .font-headline { font-family: 'Manrope', sans-serif !important; letter-spacing: -0.02em; }
+.font-mono { font-family: 'JetBrains Mono', monospace !important; }
+
+/* Material Symbols Globals */
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24 !important;
+}
 
 /* App background */
-.stApp { background-color: #0e110e !important; }
+.stApp { 
+    background-color: #0e110e !important; 
+    background-image: radial-gradient(rgba(161, 212, 148, 0.05) 1px, transparent 1px) !important;
+    background-size: 24px 24px !important;
+}
 
-/* Hide default Streamlit chrome */
-#MainMenu, footer, header { visibility: hidden; }
-.block-container { padding: 1.5rem 2rem 3rem !important; max-width: 100% !important; }
+/* Hide default Streamlit decoration and footer, but KEEP header visible for the sidebar toggle */
+#MainMenu, footer, [data-testid="stDecoration"] { visibility: hidden !important; }
+header[data-testid="stHeader"] { background: transparent !important; color: transparent !important; }
+/* Keep the sidebar toggle button (chevron) visible */
+header[data-testid="stHeader"] button { visibility: visible !important; color: var(--on-surface) !important; }
 
-/* Sidebar */
+.block-container { padding: 2rem 3rem 4rem !important; max-width: 1200px !important; margin: 0 auto; }
+
+/* Sidebar Navigation Fix */
 [data-testid="stSidebar"] {
-    background-color: #111411 !important;
-    border-right: 1px solid rgba(66,73,62,0.4) !important;
+    background-color: var(--surface-container-low) !important;
+    border-right: 1px solid var(--outline-variant) !important;
 }
-[data-testid="stSidebar"] > div:first-child { padding: 1.5rem 1rem !important; }
 
-/* Sidebar radio (nav) */
-[data-testid="stSidebar"] .stRadio > label { display: none !important; }
-[data-testid="stSidebar"] .stRadio > div { gap: 2px !important; }
-[data-testid="stSidebar"] .stRadio > div > label {
-    width: 100% !important;
-    padding: 0.65rem 1rem !important;
-    border-radius: 8px !important;
-    color: #c2c9bb !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
+/* Streamlit Radio Buttons (Sidebar Menu Styling) */
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--on-surface-variant) !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 12px !important;
+    transition: all 0.2s ease !important;
     cursor: pointer !important;
-    transition: all 0.15s ease !important;
+    margin-bottom: 4px !important;
+    border: 1px solid transparent !important;
+    display: flex !important;
+    align-items: center !important;
 }
-[data-testid="stSidebar"] .stRadio > div > label:hover {
-    background: rgba(66,73,62,0.5) !important;
-    color: #e2e3de !important;
+[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+    background-color: var(--surface-container-highest) !important;
+    color: var(--on-surface) !important;
 }
-[data-testid="stSidebar"] .stRadio > div > label[data-testid="stMarkdownContainer"] span { display: none !important; }
-[data-testid="stSidebar"] .stRadio [aria-checked="true"] + label,
-[data-testid="stSidebar"] .stRadio div[data-baseweb="radio"] input:checked ~ div {
-    background: rgba(45,90,39,0.5) !important;
-    color: #a1d494 !important;
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radio"][aria-checked="true"] {
+    background-color: var(--primary-container) !important;
+    border: 1px solid rgba(161,212,148,0.2) !important;
 }
-/* Force radio buttons hidden */
-[data-testid="stSidebar"] .stRadio [data-baseweb="radio"] > div:first-child { display: none !important; }
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radio"][aria-checked="true"] p {
+    color: var(--on-primary-container) !important;
+    font-weight: 700 !important;
+}
+/* Hide the default radio circle entirely */
+[data-testid="stSidebar"] [data-testid="stRadio"] div[data-baseweb="radio"] > div:first-child {
+    display: none !important;
+}
 
 /* Metric styling */
 [data-testid="stMetric"] {
-    background: #1a1c1a !important;
-    border: 1px solid rgba(66,73,62,0.3) !important;
-    border-radius: 12px !important;
-    padding: 1.25rem !important;
+    background: var(--surface-container-lowest) !important;
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: 16px !important;
 }
-[data-testid="stMetricLabel"] { color: #c2c9bb !important; font-size: 10px !important; font-weight: 700 !important; text-transform: uppercase !important; letter-spacing: 1.5px !important; }
-[data-testid="stMetricValue"] { color: #a1d494 !important; font-family: 'Manrope', sans-serif !important; font-weight: 800 !important; }
-[data-testid="stMetricDelta"] { font-size: 12px !important; }
-
-/* Chat messaging */
-[data-testid="stChatMessage"] {
-    background: #1e221e !important;
-    border: 1px solid rgba(66,73,62,0.3) !important;
-    border-radius: 12px !important;
-}
-[data-testid="stChatInput"] textarea {
-    background: #111411 !important;
-    border: 1px solid rgba(66,73,62,0.5) !important;
-    color: #e2e3de !important;
-    border-radius: 12px !important;
-}
-[data-testid="stChatInput"] textarea::placeholder { color: #42493e !important; }
 
 /* Alert boxes */
 .alert-critical {
-    background: rgba(147,0,10,0.25) !important;
+    background: var(--error-container) !important;
     border-left: 4px solid #ffb4ab !important;
-    border-radius: 0 12px 12px 0 !important;
-    padding: 1rem 1.25rem !important;
-    margin-bottom: 0.75rem !important;
-    color: #ffdad6 !important;
+    color: var(--on-error-container) !important;
+    border-radius: 12px !important;
+    padding: 1.25rem !important;
+    margin-bottom: 1rem !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
 .alert-warning {
-    background: rgba(121,0,11,0.2) !important;
+    background: var(--tertiary-container) !important;
     border-left: 4px solid #ffb3ac !important;
-    border-radius: 0 12px 12px 0 !important;
-    padding: 1rem 1.25rem !important;
-    margin-bottom: 0.75rem !important;
-    color: #ffb3ac !important;
-}
-.alert-ok {
-    background: rgba(45,90,39,0.25) !important;
-    border-left: 4px solid #a1d494 !important;
-    border-radius: 0 12px 12px 0 !important;
-    padding: 1rem 1.25rem !important;
-    margin-bottom: 0.75rem !important;
-    color: #a1d494 !important;
+    color: var(--on-tertiary-container) !important;
+    border-radius: 12px !important;
+    padding: 1.25rem !important;
+    margin-bottom: 1rem !important;
 }
 
 /* Plot status cards */
 .plot-card {
-    background: #111411 !important;
-    border: 1px solid rgba(66,73,62,0.25) !important;
-    border-radius: 16px !important;
-    padding: 1.5rem !important;
-    position: relative !important;
-    overflow: hidden !important;
-    height: 100% !important;
+    background: var(--surface-container-lowest) !important;
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: 20px !important;
+    padding: 1.75rem !important;
+    transition: transform 0.3s ease, border-color 0.3s ease;
 }
+.plot-card:hover { border-color: var(--primary); transform: translateY(-4px); }
 .plot-card-critical { border-left: 4px solid #ffb4ab !important; }
 .plot-card-warning  { border-left: 4px solid #ffb3ac !important; }
-.plot-card-ok       { border-left: 4px solid #a1d494 !important; }
-.plot-badge-critical { background: rgba(147,0,10,0.3); color: #ffb4ab; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
-.plot-badge-warning  { background: rgba(164,2,19,0.3); color: #ffb3ac; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
-.plot-badge-ok       { background: rgba(45,90,39,0.4);  color: #a1d494; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
-.plot-metric-val { font-size: 3rem; font-weight: 800; font-family: 'Manrope', sans-serif; color: #a1d494; line-height: 1; }
-.plot-metric-unit { font-size: 1rem; font-weight: 400; color: #c2c9bb; margin-left: 4px; }
-.plot-metric-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #42493e; margin-bottom: 0.5rem; }
+.plot-card-ok       { border-left: 4px solid var(--primary) !important; }
+
+/* Gradient buttons for Sidebar */
+div[data-testid="stSidebar"] .stDownloadButton button {
+    background: linear-gradient(135deg, var(--primary-container), #a1d494) !important;
+    color: #1a1c1a !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 13px !important;
+    transition: all 0.2s ease !important;
+    width: 100% !important;
+}
+div[data-testid="stSidebar"] .stDownloadButton button:hover {
+    filter: brightness(1.1);
+    transform: scale(1.02) !important;
+}
+
+/* Section label in sidebar */
+.sb-sidebar-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #42493e;
+    margin-bottom: 0.75rem;
+    padding-left: 0.5rem;
+}
+
+/* Chatbot styles */
+[data-testid="stChatMessage"] {
+    background: var(--surface-container-low) !important;
+    border: 1px solid var(--outline-variant) !important;
+    border-radius: 16px !important;
+}
+
+/* Section typography */
+.section-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:var(--primary); margin-bottom:0.25rem; }
+.section-title { font-family:'Manrope',sans-serif; font-size:2.25rem; font-weight:800; color:var(--on-surface); line-height:1.1; margin-bottom:0.5rem; }
+.section-subtitle { font-size:1rem; color:var(--on-surface-variant); max-width:560px; line-height:1.6; margin-bottom:2rem; }
+.divider { border:none; border-top:1px solid var(--outline-variant); margin:2rem 0; }
+
+/* Insight box */
+.insight-box {
+    background: var(--surface-container-low);
+    border-left: 4px solid #f59e0b;
+    border-radius: 0 16px 16px 0;
+    padding: 1.5rem;
+}
 
 /* Action cards */
 .action-card {
-    background: #1a1c1a !important;
-    border-radius: 16px !important;
-    padding: 1.5rem !important;
-    margin-bottom: 1rem !important;
-    border: 1px solid rgba(66,73,62,0.3) !important;
+    background: var(--surface-container-lowest);
+    border: 1px solid var(--outline-variant);
+    border-radius: 16px;
+    padding: 1.75rem;
+    transition: transform 0.2s ease;
 }
+.action-card:hover { transform: translateY(-2px); }
 .action-critical { border-left: 4px solid #ffb4ab !important; }
-.action-short    { border-left: 4px solid #a5c8ff !important; }
+.action-short { border-left: 4px solid #a5c8ff !important; }
 
-/* Upgrade locked cards */
-.upgrade-card {
-    background: #111411;
-    border-radius: 16px;
-    padding: 1.5rem;
-    border: 1px solid rgba(66,73,62,0.3);
-    position: relative;
-    overflow: hidden;
-    filter: brightness(0.7);
+/* Metric label */
+.plot-metric-label {
+    font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:#42493e; margin-bottom:0.25rem;
 }
-.lock-overlay {
-    position: absolute; inset: 0;
-    background: rgba(14,17,14,0.75);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    border-radius: 16px;
-}
-
-/* Section headers */
-.section-label {
-    font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 2px; color: #a1d494; margin-bottom: 4px;
-}
-.section-title {
-    font-size: 2.25rem; font-weight: 800; color: #e2e3de;
-    font-family: 'Manrope', sans-serif; margin-bottom: 0.5rem;
-}
-.section-subtitle { font-size: 1rem; color: #c2c9bb; margin-bottom: 1.5rem; }
-
-/* Divider */
-.divider { border: none; border-top: 1px solid rgba(66,73,62,0.3); margin: 1.5rem 0; }
-
-/* Insight callout */
-.insight-box {
-    background: rgba(29,34,30,0.8);
-    border: 1px solid rgba(161,212,148,0.2);
-    border-left: 4px solid #a1d494;
-    border-radius: 0 12px 12px 0;
-    padding: 1rem 1.25rem;
-}
-
-/* Plotly chart containers */
-.stPlotlyChart { border-radius: 16px !important; overflow: hidden !important; }
-
-/* Selectbox */
-[data-testid="stSelectbox"] { color: #e2e3de !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -224,29 +313,16 @@ def load_data(uploaded_file=None):
         st.error(f"Could not load data: {e}")
         return pd.DataFrame()
 
-def generate_csv_report(stats):
-    report = []
-    for plot in ["Plot1", "Plot2", "Plot3"]:
-        if plot in stats:
-            row = {"Plot": plot}
-            row.update(stats[plot])
-            report.append(row)
-    
-    # Add a system summary row
-    report.append({
-        "Plot": "SYSTEM TOTAL",
-        "moisture": "", "ec": "", "ph": "", "temp": "",
-        "min_moisture": f"Rainfall: {stats.get('total_rainfall', 0)}mm",
-        "max_ec": f"Irrigation: {stats.get('total_irrigation', 0)}mm",
-        "min_ph": "", "status": ""
-    })
-    
-    return pd.DataFrame(report).to_csv(index=False).encode('utf-8')
+def generate_csv_report(df):
+    """Generates the full historical dataset as a CSV for export."""
+    return df.to_csv(index=False).encode('utf-8')
 
+
+import io
 
 @st.cache_data
 def compute_stats(df_json):
-    df = pd.read_json(df_json)
+    df = pd.read_json(io.StringIO(df_json))
     df["timestamp"] = pd.to_datetime(df["timestamp"])
     stats = {}
     for plot in df["plot_id"].unique():
@@ -298,7 +374,12 @@ Answer in 3-5 sentences max. Use simple language. Always recommend a concrete ac
 
 
 def get_gemini_client():
-    return genai.Client(api_key=GEMINI_API_KEY)
+    if SDK_VERSION == "new":
+        return genai.Client(api_key=GEMINI_API_KEY)
+    elif SDK_VERSION == "legacy":
+        genai.configure(api_key=GEMINI_API_KEY)
+        return genai.GenerativeModel('gemini-2.5-flash')
+    return None
 
 
 def build_system_prompt(stats):
@@ -316,29 +397,38 @@ def build_system_prompt(stats):
 # ── MAIN ──────────────────────────────────────────────────────
 def main():
     with st.sidebar:
+        # ── LOGO ──
         st.markdown("""
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:2rem">
-            <div style="width:40px;height:40px;background:rgba(45,90,39,0.5);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px">🌱</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:2.5rem;padding:0.5rem">
+            <div style="width:40px;height:40px;background:#a1d494;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#043907">
+                <span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1">agriculture</span>
+            </div>
             <div>
-                <div style="font-family:Manrope,sans-serif;font-weight:700;font-size:15px;color:#a1d494">The Precision Earth</div>
-                <div style="font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#42493e;font-weight:600">Silty Soil Monitor</div>
+                <div style="font-family:'Manrope',sans-serif;font-weight:800;font-size:16px;color:#e2e3de;line-height:1.1">The Precision Earth</div>
+                <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#42493e;font-weight:700">Silty Soil Monitor</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        tab = st.radio(
+        # ── NAVIGATION ──
+        active_tab = st.radio(
             "Navigation",
-            ["📊  Executive Overview", "📈  Historical Trends", "⚡  Action Center", "🚀  Future Upgrades"],
-            label_visibility="collapsed",
+            options=["📊  Executive Overview", "📈  Historical Trends", "⚡  Action Center", "🚀  Future Upgrades"],
+            label_visibility="collapsed"
         )
-        active_tab = tab.split("  ")[1].strip()
 
-        st.markdown("<hr style='border:none;border-top:1px solid rgba(66,73,62,0.3);margin:1.5rem 0'>", unsafe_allow_html=True)
-        st.markdown("""<div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#42493e;font-weight:700;margin-bottom:0.5rem">Data Source</div>""", unsafe_allow_html=True)
-        
-        uploaded_file = st.file_uploader("Upload dataset", type=["csv", "xlsx", "xlsm"], label_visibility="collapsed")
+        st.markdown("<div style='height:2rem'></div>", unsafe_allow_html=True)
+
+        # ── DATA MANAGEMENT ──
+        st.markdown('<div class="sb-sidebar-label">Data Management</div>', unsafe_allow_html=True)
+        uploaded_file = st.file_uploader(
+            "Upload plantation telemetry", 
+            type=["csv", "xlsx", "xlsm"], 
+            label_visibility="collapsed",
+            help="Upload the latest soil telemetry spreadsheet"
+        )
         if uploaded_file is None:
-            st.markdown("""<div style="font-size:11px;color:#c2c9bb;margin-top:-10px;margin-bottom:1rem">Using default: plantation_soil_data.xlsm</div>""", unsafe_allow_html=True)
+            st.markdown('<div style="font-size:11px;color:#c2c9bb;padding:0 0.5rem;opacity:0.7">Using default: plantation_soil_data.xlsm</div>', unsafe_allow_html=True)
 
     df = load_data(uploaded_file)
     if df.empty:
@@ -348,35 +438,89 @@ def main():
     stats = compute_stats(df.to_json())
 
     with st.sidebar:
-        st.markdown("<hr style='border:none;border-top:1px solid rgba(66,73,62,0.3);margin:0 0 1.5rem 0'>", unsafe_allow_html=True)
-        st.markdown("""
-        <div style="padding:0 0.5rem">
-            <div style="font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#42493e;font-weight:700;margin-bottom:0.5rem">System Status</div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#c2c9bb">
-                <div style="width:8px;height:8px;background:#ffb4ab;border-radius:50%;animation:pulse 2s infinite"></div>
-                Irrigation: OFFLINE
-            </div>
-            <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#c2c9bb;margin-top:6px">
-                <div style="width:8px;height:8px;background:#a1d494;border-radius:50%"></div>
-                Sensors: 3/3 Online
-            </div>
-        </div>
-        <style>@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }</style>
-        """, unsafe_allow_html=True)
-
-        st.markdown("<div style='height:1.5rem'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='flex-grow:1'></div>", unsafe_allow_html=True)
+        st.markdown("<hr style='border:none;border-top:1px solid rgba(66,73,62,0.2);margin:1.5rem 0'>", unsafe_allow_html=True)
         
-        csv_data = generate_csv_report(stats)
+        csv_data = generate_csv_report(df)
         st.download_button(
             label="📥  Export Soil Report",
             data=csv_data,
-            file_name="soil_health_report.csv",
+            file_name="full_telemetry_report.csv",
             mime="text/csv",
-            use_container_width=True,
         )
+
+        # ── FOOTER LINKS ──
+        st.markdown("""
+        <div style="padding:0.5rem;margin-top:0.5rem">
+            <a href="#" style="display:flex;align-items:center;gap:12px;color:#c2c9bb;text-decoration:none;font-size:13px;margin-bottom:0.75rem">
+                <span class="material-symbols-outlined" style="font-size:18px">help</span> Support
+            </a>
+            <a href="#" style="display:flex;align-items:center;gap:12px;color:#c2c9bb;text-decoration:none;font-size:13px">
+                <span class="material-symbols-outlined" style="font-size:18px">logout</span> Sign Out
+            </a>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # ── HEADER RENDERING ─────────────────────────────────────────
+    st.markdown(f"""
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 2rem;">
+        <div>
+            <span style="font-size:10px; font-weight:700; letter-spacing:0.2em; color:var(--on-surface-variant); text-transform:uppercase; margin-bottom:0.5rem; display:block;">Live Dashboard</span>
+            <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--on-surface); margin:0; line-height:1;">{active_tab.replace('📊 ', '').replace('📈 ', '').replace('⚡ ', '').replace('🚀 ', '')}</h1>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; padding: 0.5rem 1rem; background:var(--surface-container-lowest); border:1px solid var(--outline-variant); border-radius:999px;">
+            <div style="width:8px; height:8px; background-color:#ffb4ab; border-radius:50%; animation: pulse 2s infinite;"></div>
+            <span style="font-size:12px; font-weight:700; color:var(--on-surface-variant);">LIVE MONITORING ACTIVE</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── PAGE RENDERING ──────────────────────────────────────────
+    if "Executive Overview" in active_tab:
+        render_overview(df, stats)
+    elif "Historical Trends" in active_tab:
+        render_trends(df, stats)
+    elif "Action Center" in active_tab:
+        render_actions(stats)
+    elif "Future Upgrades" in active_tab:
+        render_upgrades()
 
 
 # ── TAB 1: EXECUTIVE OVERVIEW ─────────────────────────────────
+@st.dialog("Detailed Plot Analytics")
+def show_plot_details(plot_id, plot_label, df, s):
+    st.markdown(f"## {plot_id}: {plot_label}")
+    st.markdown(f"**Current Status:** {s['status']}")
+    
+    p_df = df[df["plot_id"] == plot_id].copy()
+    if p_df.empty:
+        st.warning("No historical data available for this plot.")
+        return
+        
+    p_df["date"] = p_df["timestamp"].dt.date
+    daily = p_df.groupby("date").agg(
+        moisture=("soil_moisture_pct", "mean"),
+        ec=("soil_ec_ds_m", "mean"),
+        ph=("soil_ph", "mean")
+    ).reset_index()
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(go.Scatter(x=daily["date"], y=daily["moisture"], name="Moisture %", line=dict(color="#a1d494", width=3)), secondary_y=False)
+    fig.add_trace(go.Scatter(x=daily["date"], y=daily["ec"], name="EC (dS/m)", line=dict(color="#ffb4ab", width=2, dash="dot")), secondary_y=True)
+    
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(family="Inter", color="#c2c9bb", size=11),
+        margin=dict(l=10, r=10, t=10, b=10),
+        height=300,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
+    fig.update_yaxes(title_text="Moisture (%)", secondary_y=False, showgrid=True, gridcolor="rgba(66,73,62,0.2)")
+    fig.update_yaxes(title_text="EC (dS/m)", secondary_y=True, showgrid=False)
+    
+    st.plotly_chart(fig, use_container_width=True)
+    st.info(f"**7-Day Summary:** Peak EC was {s['max_ec']} dS/m. Minimum moisture was {s['min_moisture']}%.")
+
 def render_overview(df, stats):
     # Header
     st.markdown('<div class="section-label">Live Dashboard</div>', unsafe_allow_html=True)
@@ -387,55 +531,93 @@ def render_overview(df, stats):
     st.markdown("### 🚨 Active System Alerts")
     if stats["total_irrigation"] == 0:
         st.markdown("""
-        <div class="alert-critical">
-            <strong>CRITICAL: Irrigation System Offline (0.0mm recorded all week)</strong><br>
-            <span style="font-size:13px;opacity:0.85">No water has been delivered via irrigation for 7 consecutive days. Mechanical failure or signal blockage at BMS controller suspected. Manual override required immediately.</span>
+        <div style="display:flex;align-items:center;gap:16px;padding:1.25rem;background:var(--error-container);color:var(--on-error-container);border-radius:12px;border-left:4px solid #ffb4ab;margin-bottom:0.75rem;box-shadow:0 4px 12px rgba(0,0,0,0.2)">
+            <span style="font-size:24px">🚨</span>
+            <div style="flex:1">
+                <div style="font-weight:700;font-size:14px;letter-spacing:-0.01em">CRITICAL: Irrigation System Offline (0mm)</div>
+                <div style="font-size:12px;opacity:0.8;margin-top:2px">Hardware failure detected. No water delivered despite scheduled cycles. Manual override required.</div>
+            </div>
+            <span style="font-size:11px;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer;white-space:nowrap">ACTION REQUIRED</span>
         </div>""", unsafe_allow_html=True)
 
-    if stats["Plot1"]["min_moisture"] < WILTING_POINT:
-        st.markdown(f"""
-        <div class="alert-critical">
-            <strong>CRITICAL: Plot 1 Drought & Salinity Stress ({stats['Plot1']['min_moisture']}% Moisture, {stats['Plot1']['max_ec']} dS/m EC)</strong><br>
-            <span style="font-size:13px;opacity:0.85">Moisture dropped to wilting point this week. High EC suggests salt accumulation at root zone — crops facing osmotic stress. Immediate action required.</span>
-        </div>""", unsafe_allow_html=True)
+    alert_triggered = False
+    for plot in sorted(df["plot_id"].unique()):
+        s = stats[plot]
+        if s["min_moisture"] < WILTING_POINT:
+            alert_triggered = True
+            st.markdown(f"""
+            <div style="display:flex;align-items:center;gap:16px;padding:1.25rem;background:var(--error-container);color:var(--on-error-container);border-radius:12px;border-left:4px solid #ffb4ab;margin-bottom:0.75rem;box-shadow:0 4px 12px rgba(0,0,0,0.2)">
+                <span style="font-size:24px">⚠️</span>
+                <div style="flex:1">
+                    <div style="font-weight:700;font-size:14px">CRITICAL: {plot} Drought &amp; Salinity Stress ({s['min_moisture']}% Moisture, {s['max_ec']} dS/m EC)</div>
+                    <div style="font-size:12px;opacity:0.8;margin-top:2px">Root zone moisture below survival threshold. Salinity spike detected.</div>
+                </div>
+                <span style="font-size:11px;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer;white-space:nowrap">VIEW MAP</span>
+            </div>""", unsafe_allow_html=True)
 
-    if stats["Plot2"]["min_ph"] < PH_ACID:
-        st.markdown(f"""
-        <div class="alert-warning">
-            <strong>WARNING: Plot 2 Soil Acidity Dip (pH {stats['Plot2']['min_ph']})</strong><br>
-            <span style="font-size:13px;opacity:0.85">Nitrogen-induced acidification detected. pH dropped below safe threshold. Agricultural liming recommended within 48 hours to restore nutrient availability.</span>
+        if s["min_ph"] < PH_ACID:
+            alert_triggered = True
+            st.markdown(f"""
+            <div style="display:flex;align-items:center;gap:16px;padding:1.25rem;background:var(--tertiary-container);color:var(--on-tertiary-container);border-radius:12px;border-left:4px solid #ffb3ac;margin-bottom:0.75rem">
+                <span style="font-size:24px">🧪</span>
+                <div style="flex:1">
+                    <div style="font-weight:700;font-size:14px">WARNING: {plot} Acidity Dip (pH {s['min_ph']})</div>
+                    <div style="font-size:12px;opacity:0.8;margin-top:2px">Nitrogen-induced acidification trending downwards. Immediate liming recommended.</div>
+                </div>
+                <span style="font-size:11px;font-weight:700;text-decoration:underline;text-underline-offset:3px;cursor:pointer;white-space:nowrap">SCHEDULE LIMING</span>
+            </div>""", unsafe_allow_html=True)
+
+    if not alert_triggered and stats["total_irrigation"] > 0:
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:16px;padding:1.25rem;background:var(--primary-container);color:var(--on-primary-container);border-radius:12px;border-left:4px solid #a1d494;margin-bottom:0.75rem">
+            <span style="font-size:24px">✅</span>
+            <div style="flex:1">
+                <div style="font-weight:700;font-size:14px">All Systems Nominal</div>
+                <div style="font-size:12px;opacity:0.8;margin-top:2px">No critical alerts detected in the current telemetry window.</div>
+            </div>
         </div>""", unsafe_allow_html=True)
 
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
     # ── PLOT STATUS CARDS ──
     st.markdown("### 🗺️ Plot Status Monitor")
-    cols = st.columns(3)
+    st.markdown("<p style='color:var(--on-surface-variant); font-size:14px; margin-bottom:1.5rem;'>Live telemetry from edge sensors.</p>", unsafe_allow_html=True)
+    
+    cols = st.columns(3, gap="large")
 
-    for i, (plot, label) in enumerate([("Plot1","North Valley"), ("Plot2","Ridge Side"), ("Plot3","River Basin")]):
+    for i, plot in enumerate(sorted(df["plot_id"].unique())):
         s = stats[plot]
-        css_cls = {"STRESSED":"critical","WARNING":"warning","OPTIMAL":"ok"}[s["status"]]
-        badge_html = f'<span class="plot-badge-{css_cls}">{s["status"]}</span>'
+        # Match Tailwind semantic colors to status
+        css_cls = {"STRESSED":"error","WARNING":"tertiary","OPTIMAL":"primary"}[s["status"]]
+        
         with cols[i]:
-            st.markdown(f"""
-            <div class="plot-card plot-card-{css_cls}">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
-                    <div class="plot-metric-label">{plot}: {label}</div>
-                    {badge_html}
+            delay = (i + 1) * 100
+            st_html(f"""
+            <div class="animate-enter delay-{delay} bg-surface-container-lowest/80 backdrop-blur-md p-6 rounded-2xl border border-outline-variant/20 hover:border-primary/50 hover:bg-surface-container-low relative group shadow-sm hover:shadow-lg transition-all duration-300 h-full flex flex-col justify-between" style="transform:translateZ(0)">
+                <div class="absolute left-0 top-1/4 bottom-1/4 w-1 bg-{css_cls} rounded-r-full group-hover:h-3/4 group-hover:top-[12.5%] transition-all duration-300 ease-out"></div>
+                <div>
+                    <div class="flex justify-between items-start mb-6 pl-2">
+                        <span class="text-xs font-bold text-on-surface-variant uppercase tracking-widest">{plot}</span>
+                        <span class="bg-{css_cls}-container/40 text-{css_cls} px-2 py-0.5 rounded text-[10px] font-bold border border-{css_cls}/20 tracking-wide">{s['status']}</span>
+                    </div>
+                    <div class="mb-4 pl-2">
+                        <h4 class="text-[2.75rem] font-extrabold text-{css_cls} mb-0 leading-none" style="font-family: 'JetBrains Mono', monospace;">{s['moisture']}<span class="text-base font-medium text-on-surface-variant ml-1">%</span></h4>
+                        <p class="text-[11px] font-semibold text-on-surface-variant mt-2 uppercase tracking-wide">Volumetric Water Content</p>
+                    </div>
                 </div>
-                <div style="margin-bottom:0.75rem">
-                    <div class="plot-metric-val">{s['moisture']}<span class="plot-metric-unit">%</span></div>
-                    <div style="font-size:11px;color:#42493e;margin-top:2px">Volumetric Water Content</div>
-                </div>
-                <hr style="border:none;border-top:1px solid rgba(66,73,62,0.2);margin:0.75rem 0">
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:12px">
-                    <div><span style="color:#42493e">EC:</span> <span style="color:#c2c9bb;font-weight:600">{s['ec']} dS/m</span></div>
-                    <div><span style="color:#42493e">pH:</span> <span style="color:#c2c9bb;font-weight:600">{s['ph']}</span></div>
-                    <div><span style="color:#42493e">Temp:</span> <span style="color:#c2c9bb;font-weight:600">{s['temp']}°C</span></div>
-                    <div><span style="color:#42493e">Week Min:</span> <span style="color:#ffb4ab;font-weight:600">{s['min_moisture']}%</span></div>
+                
+                <div class="mt-4 pt-4 border-t border-outline-variant/20 pl-2">
+                    <div class="grid grid-cols-2 gap-y-3 gap-x-2 text-xs">
+                        <div><span class="text-on-surface-variant font-medium">EC:</span> <span class="font-bold text-on-surface ml-1">{s['ec']} dS/m</span></div>
+                        <div><span class="text-on-surface-variant font-medium">pH:</span> <span class="font-bold text-on-surface ml-1">{s['ph']}</span></div>
+                        <div><span class="text-on-surface-variant font-medium">Temp:</span> <span class="font-bold text-on-surface ml-1">{s['temp']}°C</span></div>
+                        <div><span class="text-on-surface-variant font-medium">Min:</span> <span class="font-black text-error ml-1">{s['min_moisture']}%</span></div>
+                    </div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
+            if st.button(f"🔍 View {plot} Details", key=f"btn_pop_{plot}", use_container_width=True):
+                show_plot_details(plot, plot, df, s)
 
     st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
@@ -475,24 +657,34 @@ def render_overview(df, stats):
             st.markdown(prompt)
 
         with st.chat_message("assistant", avatar="🌱"):
-            try:
-                # Build conversation history for multi-turn chat
-                contents = []
-                for msg in st.session_state.chat_history:
-                    role = "user" if msg["role"] == "user" else "model"
-                    contents.append(types.Content(role=role, parts=[types.Part(text=msg["content"])]))
-
-                response = st.session_state.gemini_client.models.generate_content(
-                    model="gemini-3-flash-preview",
-                    contents=contents,
-                    config=types.GenerateContentConfig(
-                        system_instruction=st.session_state.system_prompt,
-                        max_output_tokens=400,
-                    ),
-                )
-                reply = response.text
-            except Exception as e:
-                reply = f"⚠️ Gemini API error: {e}"
+            with st.spinner("..."):
+                try:
+                    # Build conversation history for multi-turn chat
+                    if SDK_VERSION == "new":
+                        contents = []
+                        for msg in st.session_state.chat_history:
+                            role = "user" if msg["role"] == "user" else "model"
+                            contents.append(types.Content(role=role, parts=[types.Part(text=msg["content"])]))
+    
+                        response = st.session_state.gemini_client.models.generate_content(
+                            model="gemini-2.5-flash",
+                            contents=contents,
+                            config=types.GenerateContentConfig(
+                                system_instruction=st.session_state.system_prompt,
+                                max_output_tokens=1000,
+                            ),
+                        )
+                        reply = response.text
+                    elif SDK_VERSION == "legacy":
+                        # Simple single-turn for legacy fallback to keep it robust
+                        chat = st.session_state.gemini_client.start_chat(history=[])
+                        full_prompt = f"{st.session_state.system_prompt}\n\nUser: {prompt}"
+                        response = chat.send_message(full_prompt)
+                        reply = response.text
+                    else:
+                        reply = "⚠️ Gemini library not installed."
+                except Exception as e:
+                    reply = f"⚠️ Gemini API error: {e}"
             st.markdown(reply)
             st.session_state.chat_history.append({"role": "assistant", "content": reply})
 
@@ -564,25 +756,39 @@ def render_trends(df, stats):
         st.markdown("<div style='height:2.5rem'></div>", unsafe_allow_html=True)
         st.markdown("""
         <div class="insight-box">
-            <div style="color:#a1d494;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:0.5rem">⚠ Critical Insight</div>
-            <div style="font-family:Manrope,sans-serif;font-weight:700;font-size:16px;color:#e2e3de;margin-bottom:0.75rem">Irrigation Anomaly Detected</div>
-            <div style="font-size:13px;color:#c2c9bb;line-height:1.6">
-                Moisture levels <strong style="color:#a1d494">only recover</strong> immediately after rainfall events. During dry intervals, there is <strong style="color:#ffb4ab">zero moisture recovery</strong> despite scheduled irrigation cycles — confirming a mechanical failure in the BMS pump.
+            <div style="display:flex;align-items:center;gap:8px;color:#f59e0b;margin-bottom:1rem">
+                <span style="font-size:18px">⚠️</span>
+                <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px">Critical Insight</span>
+            </div>
+            <div style="font-family:Manrope,sans-serif;font-weight:700;font-size:17px;color:#e2e3de;margin-bottom:0.75rem;line-height:1.3">Irrigation Anomaly Detected</div>
+            <div style="font-size:13px;color:#c2c9bb;line-height:1.7;margin-bottom:0.75rem">
+                The chart reveals a direct dependency on natural rainfall. Moisture levels <strong style="color:#a1d494">only</strong> spike immediately following rainfall bars.
+            </div>
+            <div style="font-size:13px;color:#c2c9bb;line-height:1.7">
+                During dry intervals, there is <strong style="color:#ffb4ab">zero moisture recovery</strong> despite scheduled irrigation cycles — confirming a mechanical failure in the sector pump.
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("<div style='height:1rem'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:0.75rem'></div>", unsafe_allow_html=True)
         st.markdown("""
+        <div style="background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.2);border-radius:12px;padding:1rem">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#a5c8ff;margin-bottom:0.5rem">Recommended Action</div>
+            <div style="font-size:13px;color:#c2c9bb;line-height:1.6">Deploy field engineer to inspect valve actuators and pressure transducers on the main irrigation controller.</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<div style='height:0.75rem'></div>", unsafe_allow_html=True)
+        st.markdown(f"""
         <div style="background:#1a1c1a;border:1px solid rgba(66,73,62,0.3);border-radius:12px;padding:1rem">
             <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#42493e;margin-bottom:0.75rem">Weekly Summary</div>
             <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(66,73,62,0.2);padding-bottom:0.5rem;margin-bottom:0.5rem">
                 <span style="font-size:12px;color:#c2c9bb">Total Rainfall</span>
-                <span style="font-size:12px;font-weight:700;color:#a5c8ff">555 mm</span>
+                <span style="font-size:12px;font-weight:700;color:#a5c8ff">{stats['total_rainfall']} mm</span>
             </div>
             <div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(66,73,62,0.2);padding-bottom:0.5rem;margin-bottom:0.5rem">
                 <span style="font-size:12px;color:#c2c9bb">Total Irrigation</span>
-                <span style="font-size:12px;font-weight:700;color:#ffb4ab">0.0 mm</span>
+                <span style="font-size:12px;font-weight:700;color:#ffb4ab">{stats['total_irrigation']} mm</span>
             </div>
             <div style="display:flex;justify-content:space-between">
                 <span style="font-size:12px;color:#c2c9bb">Avg Weekly Loss</span>
@@ -652,11 +858,10 @@ def render_trends(df, stats):
             colorscale=colorscale,
             zmin=0, zmax=45,
             colorbar=dict(
-                title="Moisture %",
+                title=dict(text="Moisture %", font=dict(color="#c2c9bb", size=11)),
                 tickvals=[5, 22, 38],
                 ticktext=["Drought", "Normal", "Wet"],
                 tickfont=dict(color="#c2c9bb", size=10),
-                titlefont=dict(color="#c2c9bb", size=11),
             ),
             text=[[f"{v:.1f}%" for v in row] for row in pivot.values],
             texttemplate="%{text}",
@@ -673,6 +878,26 @@ def render_trends(df, stats):
         )
         st.plotly_chart(fig2, use_container_width=True)
 
+    # ── EDITORIAL FOOTER (stitch_new style) ──
+    st.markdown(f"""
+    <div style="margin-top:2rem;display:flex;justify-content:space-between;align-items:flex-start;border-top:1px solid rgba(66,73,62,0.3);padding-top:2rem">
+        <div style="max-width:420px">
+            <p style="color:#8d9388;font-size:13px;font-style:italic;line-height:1.7;margin:0">"Historical trends allow us to see through the immediate noise of weather and uncover the underlying mechanical reliability of the plantation's infrastructure."</p>
+            <p style="margin-top:0.5rem;color:#c2c9bb;font-weight:700;font-size:11px">— Chief Agronomist Report, Q3</p>
+        </div>
+        <div style="display:flex;gap:3rem">
+            <div>
+                <span style="display:block;font-size:2rem;font-weight:900;color:#a1d494;font-family:Manrope,sans-serif">14.2%</span>
+                <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#42493e">Avg. Weekly Loss</span>
+            </div>
+            <div>
+                <span style="display:block;font-size:2rem;font-weight:900;color:#a5c8ff;font-family:Manrope,sans-serif">{stats['total_rainfall']}mm</span>
+                <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#42493e">Total Precip</span>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 
 # ── TAB 3: ACTION CENTER ──────────────────────────────────────
 def render_actions(stats):
@@ -680,117 +905,151 @@ def render_actions(stats):
     st.markdown('<div class="section-title">Action Center</div>', unsafe_allow_html=True)
     st.markdown('<div class="section-subtitle">Prioritised operational tasks based on real-time soil telemetry</div>', unsafe_allow_html=True)
 
-    col_badge, _ = st.columns([2, 5])
-    with col_badge:
-        st.markdown("""
-        <div style="display:flex;align-items:center;gap:8px;background:#1a1c1a;padding:0.5rem 1rem;border-radius:20px;width:fit-content">
-            <div style="width:8px;height:8px;background:#ffb4ab;border-radius:50%;animation:pulse 2s infinite"></div>
-            <span style="font-size:13px;font-weight:600;color:#e2e3de">3 Pending Interventions</span>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-
-    # Action 1: BMS Irrigation
-    col_main, col_map = st.columns([2, 1])
-    with col_main:
-        with st.container():
-            st.markdown(f"""
-            <div class="action-card action-critical">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start">
-                    <div>
-                        <span style="background:rgba(147,0,10,0.4);color:#ffb4ab;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:1px">⚡ Immediate Action Required</span>
-                        <div style="font-family:Manrope,sans-serif;font-weight:700;font-size:1.25rem;color:#e2e3de;margin-top:0.75rem">Inspect BMS Irrigation Controller &amp; Pumps</div>
+    # Bento Grid for Tasks
+    st_html(f"""
+    <div class="grid grid-cols-12 gap-8">
+        <!-- CRITICAL TASK: Main Card -->
+        <div class="col-span-12 lg:col-span-8">
+            <div class="relative overflow-hidden rounded-xl bg-surface-container-lowest p-1 border-l-4 border-error shadow-sm">
+                <div class="p-8">
+                    <div class="flex justify-between items-start mb-8">
+                        <div>
+                            <span class="bg-error-container text-on-error-container text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider mb-3 inline-block">Immediate Action Required</span>
+                            <h2 class="text-2xl font-bold text-on-surface">Inspect BMS Irrigation Controller & Pumps</h2>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface-variant">
+                            <span class="material-symbols-outlined">check_box_outline_blank</span>
+                        </div>
                     </div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1rem">
-                    <div>
-                        <div style="font-size:12px;color:#42493e;margin-bottom:4px">Issue Description</div>
-                        <div style="font-size:13px;color:#c2c9bb;line-height:1.6">System has recorded <strong style="color:#ffb4ab">{stats['total_irrigation']}mm</strong> of irrigation for 7 straight days despite scheduled cycles. Potential mechanical failure or signal blockage at the main BMS controller.</div>
+                    <div class="grid grid-cols-2 gap-12 mb-8">
+                        <div>
+                            <p class="text-on-surface-variant text-sm mb-2 font-semibold">Issue Description</p>
+                            <p class="text-on-surface leading-relaxed text-sm">System has recorded <span class="text-error font-bold">{stats['total_irrigation']}mm</span> of irrigation for 7 straight days despite scheduled cycles. Potential mechanical failure or signal blockage at the main controller.</p>
+                        </div>
+                        <div class="flex flex-col justify-end">
+                            <div class="bg-surface-container p-4 rounded-lg">
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-xs font-semibold text-on-surface-variant">System Pressure</span>
+                                    <span class="text-xs font-bold text-error">LOW</span>
+                                </div>
+                                <div class="w-full bg-surface-variant h-1 rounded-full overflow-hidden">
+                                    <div class="bg-error h-full w-[8%]"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <div style="font-size:12px;color:#42493e;margin-bottom:4px">System Pressure</div>
-                        <div style="background:#1a1c1a;border-radius:8px;padding:0.75rem">
-                            <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px"><span style="color:#42493e">Irrigation Pressure</span><span style="color:#ffb4ab;font-weight:700">LOW</span></div>
-                            <div style="background:rgba(66,73,62,0.3);border-radius:4px;height:4px;overflow:hidden"><div style="background:#ffb4ab;height:100%;width:8%"></div></div>
+                    <div class="flex items-center gap-6 pt-6 border-t border-outline-variant/10">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-on-surface-variant text-lg">location_on</span>
+                            <span class="text-sm font-medium">Main Hub - Sector Alpha</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-on-surface-variant text-lg">schedule</span>
+                            <span class="text-sm font-medium">Due: Immediate</span>
                         </div>
                     </div>
                 </div>
-                <div style="display:flex;gap:1.5rem;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(66,73,62,0.2);font-size:12px;color:#42493e">
-                    <span>📍 Main Hub — Sector Alpha</span>
-                    <span>⏰ Due: Immediate</span>
+            </div>
+        </div>
+
+        <!-- Stats / Map Sidebar for Context -->
+        <div class="col-span-12 lg:col-span-4 space-y-8">
+            <div class="bg-surface-container rounded-xl p-6 h-full flex flex-col border border-outline-variant/10">
+                <h3 class="font-bold text-on-surface mb-4">Location Context</h3>
+                <div class="flex-1 min-h-[160px] rounded-lg overflow-hidden relative mb-4">
+                    <img alt="Plantation Grid" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwamBr4NotdTh8akat6sQN8tLQzWIZs8n6Oj34eAbJVxQaPOzpLZvgLmPEEX9FsBbdWq1l8Oj5xBnhr0wh-jMdA3vecbSs4XsGR-eQhYkUAAj7KIY0VlSeIsYmHYzhpsY6NUK0Xd9ItLKLafuufRgQw7VIPlPXFe591eGSe6E4eBKNBL5fv0Emt84QL1sY8YHPSQatGYnJ8aMYxQM86lDo7T6NVZOkj6VFQl_-3WcjbEVoZDW2DDfj_vuzujZjeVKP3Yzathm2pOk"/>
+                    <div class="absolute inset-0 bg-gradient-to-t from-surface-container to-transparent opacity-60"></div>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-on-surface-variant">Last Pulse</span>
+                        <span class="font-mono text-on-surface font-bold">14:02 UTC</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-on-surface-variant">Sensors Online</span>
+                        <span class="font-mono text-on-surface font-bold">3/3 (100%)</span>
+                    </div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
-
-    with col_map:
-        st.markdown("""
-        <div style="background:#1a1c1a;border:1px solid rgba(66,73,62,0.3);border-radius:12px;padding:1rem;height:100%">
-            <div style="font-weight:700;font-size:14px;color:#e2e3de;margin-bottom:0.75rem">Location Context</div>
-            <div style="background:linear-gradient(135deg,#0e110e,#1a1c1a);border-radius:8px;height:120px;display:flex;align-items:center;justify-content:center;font-size:3rem;margin-bottom:0.75rem">🗺️</div>
-            <div style="font-size:11px;color:#42493e">Last pulse: 14:02 UTC · Sensor online: 98.2%</div>
         </div>
-        """, unsafe_allow_html=True)
 
-    st.markdown("<div style='height:0.5rem'></div>", unsafe_allow_html=True)
+        <!-- Secondary Actions -->
+        <div class="col-span-12 grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+            <!-- Action 2: Plot 1 Flush -->
+            <div class="bg-surface-container-low rounded-xl p-8 hover:bg-surface-container transition-all group border border-outline-variant/10">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="w-12 h-12 rounded bg-secondary-container/20 flex items-center justify-center text-secondary">
+                        <span class="material-symbols-outlined">water_drop</span>
+                    </div>
+                    <div class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center text-on-surface-variant group-hover:bg-surface-container-highest transition-colors cursor-pointer">
+                        <span class="material-symbols-outlined">check</span>
+                    </div>
+                </div>
+                <span class="text-[10px] font-bold text-secondary uppercase tracking-widest mb-2 block">Short-term Action</span>
+                <h3 class="text-xl font-bold text-on-surface mb-3 tracking-tight">Perform Fresh-water Flush on Plot 1</h3>
+                <p class="text-on-surface-variant text-sm mb-6 leading-relaxed">
+                    Wash accumulated surface salts (<span class="text-on-surface font-bold">{stats['Plot1']['max_ec']} dS/m</span>) back down below the active root zone to prevent osmotic stress.
+                </p>
+                <div class="flex items-center justify-between pt-4 border-t border-outline-variant/10">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-secondary"></div>
+                        <span class="text-xs font-bold text-on-surface-variant">Water Team Assigned</span>
+                    </div>
+                    <span class="text-xs font-bold text-on-surface-variant">Priority: High</span>
+                </div>
+            </div>
 
-    # Actions 2 & 3
-    col_a2, col_a3 = st.columns(2)
-    with col_a2:
-        st.markdown(f"""
-        <div class="action-card action-short">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
-                <div style="width:48px;height:48px;background:rgba(165,200,255,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem">💧</div>
-            </div>
-            <span style="font-size:10px;font-weight:700;color:#a5c8ff;text-transform:uppercase;letter-spacing:1.5px">Short-term Action</span>
-            <div style="font-family:Manrope,sans-serif;font-weight:700;font-size:1.1rem;color:#e2e3de;margin:0.5rem 0">Perform Fresh-water Flush on Plot 1</div>
-            <div style="font-size:13px;color:#c2c9bb;line-height:1.6;margin-bottom:1rem">
-                Wash accumulated surface salts (<strong style="color:#e2e3de">{stats['Plot1']['max_ec']} dS/m</strong>) back below the active root zone to prevent osmotic stress. Target: EC below 2.0 dS/m.
-            </div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;padding-top:0.75rem;border-top:1px solid rgba(66,73,62,0.2)">
-                <span style="color:#42493e">Assigned: Water Team</span>
-                <span style="color:#a5c8ff;font-weight:700">Priority: High</span>
+            <!-- Action 3: Plot 2 pH Buffer -->
+            <div class="bg-surface-container-low rounded-xl p-8 hover:bg-surface-container transition-all group border border-outline-variant/10">
+                <div class="flex justify-between items-start mb-6">
+                    <div class="w-12 h-12 rounded bg-tertiary-container/20 flex items-center justify-center text-tertiary">
+                        <span class="material-symbols-outlined">science</span>
+                    </div>
+                    <div class="w-10 h-10 rounded-full border border-outline-variant/30 flex items-center justify-center text-on-surface-variant group-hover:bg-surface-container-highest transition-colors cursor-pointer">
+                        <span class="material-symbols-outlined">check</span>
+                    </div>
+                </div>
+                <span class="text-[10px] font-bold text-tertiary uppercase tracking-widest mb-2 block">Short-term Action</span>
+                <h3 class="text-xl font-bold text-on-surface mb-3 tracking-tight">Apply pH Buffer (Agricultural Lime)</h3>
+                <p class="text-on-surface-variant text-sm mb-6 leading-relaxed">
+                    Apply to Plot 2 to neutralize the <span class="text-tertiary font-bold">{stats['Plot2']['min_ph']} acidic dip</span>. Target pH range: 6.2 - 6.8 for optimal nutrient uptake.
+                </p>
+                <div class="flex items-center justify-between pt-4 border-t border-outline-variant/10">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-tertiary"></div>
+                        <span class="text-xs font-bold text-on-surface-variant">Chem-Group Required</span>
+                    </div>
+                    <span class="text-xs font-bold text-on-surface-variant">Priority: Med</span>
+                </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
 
-    with col_a3:
-        st.markdown(f"""
-        <div class="action-card" style="border-left:4px solid #ffb3ac">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
-                <div style="width:48px;height:48px;background:rgba(255,179,172,0.1);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.5rem">🧪</div>
+        <!-- Footer Stats -->
+        <div class="col-span-12 mt-4 grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="p-6 bg-surface-container-lowest rounded-xl border border-outline-variant/10">
+                <p class="text-xs font-bold text-on-surface-variant uppercase mb-4 tracking-widest">Completion Rate</p>
+                <div class="flex items-end gap-3">
+                    <span class="text-4xl font-extrabold text-primary">82%</span>
+                    <span class="text-[10px] text-primary pb-1 font-bold tracking-tight">+4.2% from last week</span>
+                </div>
             </div>
-            <span style="font-size:10px;font-weight:700;color:#ffb3ac;text-transform:uppercase;letter-spacing:1.5px">Short-term Action</span>
-            <div style="font-family:Manrope,sans-serif;font-weight:700;font-size:1.1rem;color:#e2e3de;margin:0.5rem 0">Apply pH Buffer (Agricultural Lime) to Plot 2</div>
-            <div style="font-size:13px;color:#c2c9bb;line-height:1.6;margin-bottom:1rem">
-                Neutralise the <strong style="color:#ffb3ac">pH {stats['Plot2']['min_ph']}</strong> acidic dip. Target pH range: 6.2–6.8 for optimal nutrient uptake in silty soil.
+            <div class="p-6 bg-surface-container-lowest rounded-xl border border-outline-variant/10">
+                <p class="text-xs font-bold text-on-surface-variant uppercase mb-4 tracking-widest">Avg Response Time</p>
+                <div class="flex items-end gap-3">
+                    <span class="text-4xl font-extrabold text-on-surface">2.4h</span>
+                    <span class="text-[10px] text-on-surface-variant pb-1 font-bold">Operational Standard: < 4h</span>
+                </div>
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;padding-top:0.75rem;border-top:1px solid rgba(66,73,62,0.2)">
-                <span style="color:#42493e">Requires: Chem-Group</span>
-                <span style="color:#ffb3ac;font-weight:700">Priority: Medium</span>
+            <div class="p-6 bg-surface-container-lowest rounded-xl border border-outline-variant/10">
+                <p class="text-xs font-bold text-on-surface-variant uppercase mb-4 tracking-widest">Fleet Status</p>
+                <div class="flex items-end gap-3">
+                    <span class="text-4xl font-extrabold text-on-surface">12/14</span>
+                    <span class="text-[10px] text-on-surface-variant pb-1 font-bold uppercase tracking-tight">Technicians Active</span>
+                </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<hr class='divider'>", unsafe_allow_html=True)
-
-    # Footer stats
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown("""<div style="background:#111411;border-radius:12px;padding:1.25rem;border:1px solid rgba(66,73,62,0.25)">
-            <div class="plot-metric-label">Completion Rate</div>
-            <div style="font-family:Manrope,sans-serif;font-size:2.5rem;font-weight:800;color:#a1d494">82%
-            <span style="font-size:13px;font-weight:400;color:#a1d494">+4.2% this week</span></div></div>""", unsafe_allow_html=True)
-    with c2:
-        st.markdown("""<div style="background:#111411;border-radius:12px;padding:1.25rem;border:1px solid rgba(66,73,62,0.25)">
-            <div class="plot-metric-label">Avg Response Time</div>
-            <div style="font-family:Manrope,sans-serif;font-size:2.5rem;font-weight:800;color:#e2e3de">2.4h
-            <span style="font-size:13px;font-weight:400;color:#42493e">Standard: &lt;4h</span></div></div>""", unsafe_allow_html=True)
-    with c3:
-        st.markdown("""<div style="background:#111411;border-radius:12px;padding:1.25rem;border:1px solid rgba(66,73,62,0.25)">
-            <div class="plot-metric-label">Technicians Active</div>
-            <div style="font-family:Manrope,sans-serif;font-size:2.5rem;font-weight:800;color:#e2e3de">12/14
-            <span style="font-size:13px;font-weight:400;color:#42493e">Fleet status</span></div></div>""", unsafe_allow_html=True)
+    </div>
+    """)
 
 
 # ── TAB 4: FUTURE UPGRADES ────────────────────────────────────
@@ -822,7 +1081,7 @@ def render_upgrades():
     cols = st.columns(3)
     for i, (num, icon, title, desc, cost, cost_w, loss, loss_w, badge) in enumerate(upgrades):
         with cols[i]:
-            st.markdown(f"""
+            st_html(f"""
             <div style="background:#111411;border-radius:16px;padding:1.5rem;border:1px solid rgba(66,73,62,0.3);position:relative;overflow:hidden;min-height:380px">
                 <!-- Locked overlay -->
                 <div style="position:absolute;inset:0;background:rgba(14,17,14,0.75);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10;border-radius:16px;backdrop-filter:blur(2px)">
@@ -855,7 +1114,7 @@ def render_upgrades():
                     </div>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            """)
 
     st.markdown("<hr class='divider'>", unsafe_allow_html=True)
 
@@ -900,16 +1159,6 @@ def render_upgrades():
                       tickprefix="$", tickformat=",.0f"),
         )
         st.plotly_chart(fig, use_container_width=True)
-
-
-    if active_tab == "Executive Overview":
-        render_overview(df, stats)
-    elif active_tab == "Historical Trends":
-        render_trends(df, stats)
-    elif active_tab == "Action Center":
-        render_actions(stats)
-    elif active_tab == "Future Upgrades":
-        render_upgrades()
 
 
 if __name__ == "__main__":
