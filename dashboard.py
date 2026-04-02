@@ -163,6 +163,7 @@ def get_style(bg_b64, ai_b64, overlay_b64):
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        font-family: 'Silkscreen' !important;
     }}
     
     /* Reveal the actual button label but style it as a wooden sign */
@@ -434,16 +435,29 @@ def get_style(bg_b64, ai_b64, overlay_b64):
         margin-bottom: 10px;
     }}
 
-    /* RPG Buttons */
+    /* RPG Buttons: Clean Integration */
     div.stButton > button {{
         background-color: #5d4037 !important;
         border: 4px solid #3e2723 !important;
         color: #fff176 !important;
-        font-family: 'Silkscreen' !important;
+        font-family: 'Silkscreen', cursive !important;
         image-rendering: pixelated;
-        animation: pixel-pulse 3s infinite;
         text-transform: uppercase;
         letter-spacing: 1px;
+        animation: pixel-pulse 3s infinite;
+        padding: 0.5rem 1rem !important;
+    }}
+    
+    /* Force Transparent Internals to prevent "boxy" artifacts */
+    div.stButton > button p, 
+    div.stButton > button div,
+    div.stButton > button span {{
+        background-color: transparent !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: inherit !important;
+        font-family: inherit !important;
     }}
     div.stButton > button:hover {{
         background-color: #795548 !important;
