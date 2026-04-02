@@ -15,6 +15,7 @@ from google.genai import types
 import base64
 import os
 import time
+import random
 import numpy as np
 from datetime import datetime
 from dashboard_logic import load_data, compute_stats, get_categorical_heatmap_data
@@ -687,6 +688,12 @@ def generate_farm_context(stats, full_df=None):
                 m_change = p_data['soil_moisture_pct'].iloc[-1] - p_data['soil_moisture_pct'].iloc[0]
                 e_change = p_data['soil_ec_ds_m'].iloc[-1] - p_data['soil_ec_ds_m'].iloc[0]
                 ctx += f"- {pid}: Moisture {'▲' if m_change > 0 else '▼'} {abs(m_change):.1f}%, EC {'▲' if e_change > 0 else '▼'} {abs(e_change):.2f}\n"
+
+    # 4. HARDWARE STATUS HUB (v19.0)
+    if "iot_devices" in st.session_state:
+        ctx += "\n4. HARDWARE OPERATING STATUS:\n"
+        for d in st.session_state.iot_devices:
+            ctx += f"- {d['id']} ({d['type']}): {d['status']} [Signal: {d['signal']}, Battery: {d['battery']}%]\n"
     
     return ctx
 # --- CHAT UTILS ---
@@ -976,6 +983,133 @@ def render_evolution():
             c2.markdown(f"**{item['name']}**  \n*{item['effect']}*")
             c3.button("PURCHASE", key=item['name']+"_shop", width="stretch")
 
+def render_iot_command():
+    st_html("<div style='border-bottom: 2px solid var(--primary); padding-bottom:10px; margin-bottom:30px;'><h2 style='font-family:Silkscreen; color:var(--primary); margin:0;'>IoT COMMAND CENTRE</h2><p style='color:#ccc; opacity:0.7;'>Pierre's Exotic Research Lab Terminal</p></div>")
+    
+    selected_plot = st.session_state.selected_plot
+    
+    # Header showing the current focus
+    if selected_plot:
+        st.markdown(f"**FOCUS:** `FORENSIC_PL_0{selected_plot[-1]}` | showing linked hardware and shared hub.")
+    else:
+        st.markdown("**FOCUS:** `GLOBAL_NETWORK` | showing all fleet nodes.")
+
+    # ── 1. PROVISIONING HANDSHAKE (MOCKUP) ───────────────────────
+    with st.expander("➕ PROVISION NEW HARDWARE LINK", expanded=False):
+        c1, c2 = st.columns([2, 1])
+        with c1:
+            proto = st.selectbox("COMMUNICATION PROTOCOL", ["MQTT (Standard)", "LoRaWAN (Long-Range)", "HTTP POST Gateway"])
+            ip_addr = st.text_input("TARGET IP / GATEWAY ADDRESS", placeholder="e.g. 192.168.1.104")
+        with c2:
+            st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
+            if st.button("INITIALIZE LINK", use_container_width=True):
+                st.session_state.provisioning_step = 1
+        
+        if st.session_state.provisioning_step > 0:
+            steps = ["AUTHENTICATING NODE...", "RSA KEY EXCHANGE...", "SYNCING SENSOR REGISTRY...", "NODE PAIRED"]
+            bar = st.progress(0)
+            for i, step in enumerate(steps):
+                time.sleep(0.4)
+                bar.progress((i+1)*25, text=f"FORENSIC STATUS: {step}")
+            st.success("HARDWARE LINK ESTABLISHED: Node registered as 'NEW_NODE_X'")
+            st.session_state.provisioning_step = 0
+
+    st.markdown("<div style='height:20px;'></div>", unsafe_allow_html=True)
+
+    # ── 2. THE HARDWARE HANGAR (GRID) ───────────────────────────
+    # Filtering logic
+    all_devices = st.session_state.iot_devices
+    if selected_plot:
+        # Show linked plot node + global nodes
+        devices_to_show = [d for d in all_devices if d['plot'] == selected_plot or d['plot'] == 'GLOBAL']
+    else:
+        devices_to_show = all_devices
+
+    # Pre-load icons with lru_cache behavior internally
+    icons = {
+        "Gateway Hub": get_base64_img("grphics/iot_devices/Node Gateway.png"),
+        "Weather Station": get_base64_img("grphics/iot_devices/Rain Gauge.png"),
+        "Salinity Node": get_base64_img("grphics/iot_devices/EC Salinity Node.png"),
+        "Moisture Probe": get_base64_img("grphics/iot_devices/Moisture Probe.png"),
+        "Thermal Probe": get_base64_img("grphics/iot_devices/Thermal Probe.png"),
+        "pH Electrode": get_base64_img("grphics/iot_devices/pH Electrode.png"),
+        "Rain Gauge": get_base64_img("grphics/iot_devices/Rain Gauge.png")
+    }
+
+    # Use a row-by-row structure to fix visibility issues
+    for i in range(0, len(devices_to_show), 2):
+        row_cols = st.columns(2)
+        for j in range(2):
+            if i + j < len(devices_to_show):
+                device = devices_to_show[i+j]
+                with row_cols[j]:
+                    icon_b64 = icons.get(device['type'], icons["Gateway Hub"])
+                    
+                    is_online = (device["status"] == "Online")
+                    status_color = "#4EDEA3" if is_online else "#EF4444"
+                    
+                    st_html(f"""
+                        <div class='iot-card' style='border-color: {status_color if not is_online else "rgba(78, 222, 163, 0.2)"};'>
+                            <div style='display:flex; align-items:center; gap:20px;'>
+                                <img src='data:image/png;base64,{icon_b64}' style='height:70px; width:70px; image-rendering:pixelated; {"opacity:0.4; grayscale:1;" if not is_online else "filter: drop-shadow(0 0 10px rgba(78,222,163,0.3));"}'>
+                                <div style='flex-grow:1;'>
+                                    <div style='display:flex; justify-content:space-between; align-items:flex-start;'>
+                                        <h3 style='margin:0; font-family:Silkscreen; color:{status_color}; font-size:1rem;'>{device['id']}</h3>
+                                        <span style='font-size:0.65rem; color:{status_color}; font-weight:bold;'>● {device["status"].upper()}</span>
+                                    </div>
+                                    <p style='margin:2px 0; font-size:0.75rem; color:#ccc;'>Role: {device['type']}</p>
+                                    <p style='margin:2px 0; font-size:0.75rem; color:#888;'>Sector: {device['plot']}</p>
+                                    <div style='display:flex; gap:12px; margin-top:5px;'>
+                                        <span style='font-size:0.7rem; color:#aaa;'>🔋 {device['battery']}%</span>
+                                        <span style='font-size:0.7rem; color:#aaa;'>📶 {device['signal']}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    """)
+                    
+                    # Tactical Neon Buttons
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        if st.button("📡 PING", key=f"ping_{device['id']}", use_container_width=True):
+                            st.toast(f"PING response from {device['id']}: 24ms", icon="✅")
+                    with c2:
+                        btn_label = "🔌 SHUTDOWN" if is_online else "⚡ REBOOT"
+                        if st.button(btn_label, key=f"tog_{device['id']}", use_container_width=True):
+                            device['status'] = "OFFLINE" if is_online else "Online"
+                            st.rerun()
+                    with c3:
+                        if st.button("🛠️ CONFIG", key=f"ovr_{device['id']}", use_container_width=True):
+                            st.sidebar.info(f"Calibration menu for {device['id']} active.")
+
+    st.markdown("""
+        <style>
+        .iot-card {
+            background: rgba(16, 26, 24, 0.7);
+            border: 1px solid rgba(78, 222, 163, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+        /* Style Streamlit Buttons to be 'Tactical' */
+        div[st-vertical-alignment="center"] > button {
+            background-color: transparent !important;
+            border: 1px solid rgba(78, 222, 163, 0.3) !important;
+            color: #4EDEA3 !important;
+            font-family: 'Silkscreen', sans-serif !important;
+            font-size: 0.7rem !important;
+            text-transform: uppercase !important;
+        }
+        div[st-vertical-alignment="center"] > button:hover {
+            border-color: #4EDEA3 !important;
+            background-color: rgba(78, 222, 163, 0.1) !important;
+            box-shadow: 0 0 10px rgba(78, 222, 163, 0.2) !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
 def main():
     if "chat" not in st.session_state: 
         st.session_state.chat = [
@@ -989,6 +1123,36 @@ def main():
     if "music_on" not in st.session_state: st.session_state.music_on = True
     if "first_visit" not in st.session_state: st.session_state.first_visit = True
     if "researcher_name" not in st.session_state: st.session_state.researcher_name = "Researcher"
+    
+    # ── IoT DEVICE STATE (v19.6: Full-Spectrum Fleet) ─────────────
+    if "iot_devices" not in st.session_state:
+        devices = []
+        plot_ids = ["PL_01", "PL_02", "PL_03"]
+        device_configs = [
+            {"type": "Gateway Hub", "id_prefix": "GW"},
+            {"type": "Moisture Probe", "id_prefix": "MS"},
+            {"type": "pH Electrode", "id_prefix": "PH"},
+            {"type": "Salinity Node", "id_prefix": "EC"},
+            {"type": "Thermal Probe", "id_prefix": "TH"},
+            {"type": "Rain Gauge", "id_prefix": "RG"}
+        ]
+        
+        for p_id in plot_ids:
+            for config in device_configs:
+                devices.append({
+                    "id": f"{config['id_prefix']}-{p_id[-2:]}",
+                    "plot": p_id,
+                    "status": "Online",
+                    "battery": random.randint(75, 100),
+                    "signal": random.choice(["Excellent", "Good", "Balanced"]),
+                    "type": config['type']
+                })
+        
+        # Add Global Weather Station
+        devices.append({"id": "MET-STATION M1", "plot": "GLOBAL", "status": "Online", "battery": 100, "signal": "Satellite", "type": "Weather Station"})
+        st.session_state.iot_devices = devices
+    
+    if "provisioning_step" not in st.session_state: st.session_state.provisioning_step = 0
 
     # 1. STYLE INJECTION (TOP)
     bg_path = f"grphics/bg_{st.session_state.bg_mode}.png"
@@ -1108,7 +1272,7 @@ def main():
     render_header()
     stats = active_stats # Already computed above
     
-    tabs = st.tabs(["FIELD MAP", "FORENSIC WORKBENCH", "PROTOCOLS", "EVOLUTION", "AI ADVISOR"])
+    tabs = st.tabs(["FIELD MAP", "FORENSIC WORKBENCH", "PROTOCOLS", "EVOLUTION", "AI ADVISOR", "IoT COMMAND"])
     with tabs[0]: render_farm_map(full_df, stats)
     with tabs[1]: 
         st.subheader("Data Science Master Workbench")
@@ -1210,6 +1374,7 @@ def main():
     with tabs[2]: render_protocols(stats)
     with tabs[3]: render_evolution()
     with tabs[4]: render_chat_widget(stats_df=stats, full_df=full_df, wide_mode=True)
+    with tabs[5]: render_iot_command()
     
     if st.session_state.selected_plot:
         p_id = st.session_state.selected_plot
