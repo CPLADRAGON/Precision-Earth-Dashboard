@@ -127,24 +127,28 @@ def get_style(bg_b64, ai_b64, overlay_b64):
         text-shadow: 2px 2px 0px rgba(0,0,0,0.5);
         letter-spacing: 2px;
         font-weight: 800;
+    }}    /* 1. FORENSIC AI COMMANDER BUTTON (Sidebar Center) */
+    button[key="junimo_fab_btn"] {{
+        background: linear-gradient(180deg, #1a2a26 0%, #0d1513 100%) !important;
+        border: 2px solid var(--primary) !important;
+        color: var(--primary) !important;
+        font-family: 'Silkscreen' !important;
+        font-size: 0.9rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        padding: 15px 25px !important;
+        border-radius: 4px !important;
+        box-shadow: 0 0 15px rgba(78, 222, 163, 0.3) !important;
+        width: 100% !important;
+        height: auto !important;
+        transition: all 0.3s ease !important;
     }}
-
-    /* 1. FLOATING FAB & CHAT (Bottom Right) */
-    div[data-testid="stVerticalBlock"]:has(> div > div > [id="fab-anchor-id"]) {{
-        position: fixed !important; bottom: 32px; right: 32px;
-        z-index: 1000000; width: 100px; height: 100px;
+    button[key="junimo_fab_btn"]:hover {{
+        transform: scale(1.02) !important;
+        box-shadow: 0 0 25px var(--primary) !important;
+        background: var(--primary) !important;
+        color: #0d1513 !important;
     }}
-    div:has(> #fab-anchor-id) button, button[key="junimo_fab_btn"] {{
-        width: 100px !important; height: 100px !important;
-        background: transparent url(data:image/png;base64,{ai_b64}) no-repeat center !important;
-        background-size: 80px !important; color: transparent !important;
-        image-rendering: pixelated !important; border-radius: 0 !important;
-        border: none !important; box-shadow: 
-            0 0 0 4px #3e2723, 0 0 0 8px #7d5233, 0 0 0 12px #a1887f,
-            8px 8px 0px rgba(0,0,0,0.4) !important;
-        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-    }}
-    button[key="junimo_fab_btn"]:hover {{ transform: scale(1.1) !important; }}
 
     /* 3. WOODEN BUTTON TAGS (Sidebar & Panels) */
     div[data-testid="stColumn"]:has(> div > div > button[key="music_toggle_btn"]) button,
@@ -169,20 +173,6 @@ def get_style(bg_b64, ai_b64, overlay_b64):
     /* Reveal the actual button label but style it as a wooden sign */
     button[key="junimo_fab_btn"] div[data-testid="stMarkdownContainer"] p {{
         font-size: 0 !important; /* Hide original */
-    }}
-
-    /* Target the Chat Panel container (FIX 4) */
-    div[data-testid="stVerticalBlock"]:has(> div > div > [id="chat-panel-anchor-id"]) {{
-        position: fixed !important;
-        bottom: 120px !important;
-        right: 32px !important;
-        width: 420px !important;
-        z-index: 99999 !important;
-        background: #0D1513 !important;
-        border: 4px solid var(--primary) !important;
-        border-radius: 12px !important;
-        box-shadow: 0 0 50px rgba(0,0,0,0.9) !important;
-        overflow: hidden !important;
     }}
     section[data-testid="stSidebar"] .stMarkdown h3, 
     section[data-testid="stSidebar"] .stMarkdown p {{
@@ -225,22 +215,25 @@ def get_style(bg_b64, ai_b64, overlay_b64):
     /* ── CHAT SYSTEM REFACTOR (FIX 3) ────────────────────────── */
     /* FAB Mascot Styling */
     button[key="junimo_fab_btn"] {{
-        width: 80px !important;
-        height: 80px !important;
-        border-radius: 50% !important;
-        border: 4px solid var(--primary) !important;
-        background: #0D1513 url(data:image/png;base64,{ai_b64}) no-repeat center !important;
-        background-size: 56px !important;
-        color: transparent !important;
-        font-size: 0 !important;
-        animation: junimo-glow 2s ease-in-out infinite !important;
-        box-shadow: 0 0 30px rgba(78,222,163,0.4) !important;
-        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-        padding: 0 !important;
+        background: linear-gradient(180deg, #1a2a26 0%, #0d1513 100%) !important;
+        border: 2px solid var(--primary) !important;
+        color: var(--primary) !important;
+        font-family: 'Silkscreen' !important;
+        font-size: 0.9rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 2px !important;
+        padding: 15px 25px !important;
+        border-radius: 4px !important;
+        box-shadow: 0 0 15px rgba(78, 222, 163, 0.3) !important;
+        width: 100% !important;
+        height: auto !important;
+        transition: all 0.3s ease !important;
     }}
     button[key="junimo_fab_btn"]:hover {{ 
-        transform: scale(1.15) rotate(10deg) !important;
-        border-color: #ffffff !important;
+        transform: scale(1.02) !important;
+        box-shadow: 0 0 25px var(--primary) !important;
+        background: var(--primary) !important;
+        color: #0d1513 !important;
     }}
 
     .chat-panel-frame {{
@@ -270,7 +263,7 @@ def get_style(bg_b64, ai_b64, overlay_b64):
         padding: 12px 24px !important;
         font-family: 'Silkscreen', cursive !important;
         font-weight: 600 !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        transition: all 0.3s ease !important;
         color: rgba(255,255,255,0.6) !important;
         border: none !important;
         background: transparent !important;
@@ -310,7 +303,7 @@ def get_style(bg_b64, ai_b64, overlay_b64):
         font-size: 0.95rem;
         font-family: 'Plus Jakarta Sans', sans-serif;
         line-height: 1.6;
-        max-width: 80%;
+        max-width: 92%; /* Increased v17.3 */
         box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
         border: 3px solid #3e2723;
     }}
@@ -664,6 +657,8 @@ class AIAgronomist:
 
 # --- CHAT UTILS ---
 def generate_farm_context(stats):
+    if stats is None or (isinstance(stats, pd.DataFrame) and stats.empty): 
+        return "Field status unknown: Awaiting sensor calibration."
     ctx = "Current Farm Status: "
     for _, row in stats.iterrows():
         ctx += f"[{row['plot_id']}: {row['overall_status']}, Moisture {row['soil_moisture_pct']:.1f}%, EC {row['soil_ec_ds_m']:.2f}, pH {row['soil_ph']:.1f}, Temp {row.get('soil_temp_c', 0):.1f}C] "
@@ -757,52 +752,46 @@ def render_chat_messages(thinking=False):
     if thinking:
         st_html(f"<div class='ai-msg-container'><img src='data:image/png;base64,{AI_ICON_B64}' class='profile-img'><div class='msg-bubble thinking-bubble'><div class='forensic-spinner'></div> ANALYZING SENSOR STREAMS...</div></div>")
 
-def render_chat_widget(stats_df):
-    # Establish State Guards (MID = Message ID)
+def render_chat_widget(stats_df, wide_mode=False):
     if "last_processed_mid" not in st.session_state: st.session_state.last_processed_mid = None
 
-    # 1. Floating Mascot (FAB)
-    st.markdown("<div id='fab-anchor-id'></div>", unsafe_allow_html=True)
-    if st.button("Consult with AI", key="junimo_fab_btn", help="Engage Farm Intelligence"):
-        st.session_state.chat_open = not st.session_state.get("chat_open", False)
-        st.rerun()
+    if not wide_mode:
+        # --- SIDEBAR BUTTON MODE ---
+        c1, c2, c3 = st.columns([0.1, 0.8, 0.1])
+        with c2:
+            st.button("Consult with AI", key="junimo_fab_btn", use_container_width=True, help="Switch to AI Advisor Tab")
+            st.caption("Select the **'AI ADVISOR'** tab above to begin.")
+    else:
+        # --- WIDE-SCREEN TAB MODE ---
+        st_html(f"<div style='border-bottom: 2px solid var(--primary); padding-bottom:10px; margin-bottom:30px;'><h2 style='font-family:Silkscreen; color:var(--primary); margin:0;'>FORENSIC ADVISOR TERMINAL</h2><p style='color:#ccc; opacity:0.7;'>Large-Scale Strategic Intelligence Hub</p></div>")
+        
+        # ── LLM MODEL INFORMATION (v18.0) ──
+        st.caption("INTELLIGENCE ENGINE: Gemini-3.1-Flash-Lite (ULTRA-LOW LATENCY FORENSIC MODEL)")
+        if prompt := st.chat_input("Input forensic query for plot analysis...", key="tab_chat_input"):
+            timestamp_id = f"msg_{time.time()}"
+            if not st.session_state.get("ai_thinking", False):
+                st.session_state.chat.append({"role": "user", "content": prompt, "mid": timestamp_id})
+                st.session_state.ai_thinking = True
 
-    # 2. Chat Panel
-    if st.session_state.get("chat_open", False):
-        with st.container():
-            st.markdown("<div id='chat-panel-anchor-id'></div>", unsafe_allow_html=True)
-            st_html(f"<div class='chat-header-bar'><img src='data:image/png;base64,{AI_ICON_B64}' style='width:48px;height:48px;image-rendering:pixelated;'><span>FIELD AI ADVISOR</span></div>")
+        chat_container = st.container(height=650) # Taller for the tab
+        with chat_container:
+            render_chat_messages(thinking=st.session_state.get("ai_thinking", False))
             
-            # --- INSTANT PROMPT PROCESSING (TOP) ---
-            if prompt := st.chat_input("Input forensic query...", key="chat_widget_input"):
-                timestamp_id = f"msg_{time.time()}"
-                if not st.session_state.get("ai_thinking", False):
-                    st.session_state.chat.append({"role": "user", "content": prompt, "mid": timestamp_id})
-                    st.session_state.ai_thinking = True
-                    # NO RERUN HERE: Let the same run display the message below
-
-            with st.container(height=420):
-                # Now render messages (including any new prompt from above)
-                render_chat_messages(thinking=st.session_state.get("ai_thinking", False))
-                
-                # If thinking, execute the AI forensic fetch
-                if st.session_state.get("ai_thinking", False):
-                    try:
-                        agro = AIAgronomist(GEMINI_API_KEY)
-                        context = generate_farm_context(stats_df)
-                        history = st.session_state.chat[-8:]
-                        user_msg = st.session_state.chat[-1]["content"] if st.session_state.chat else ""
-                        
-                        # Guard: Prevent double-processing same ID
-                        current_mid = st.session_state.chat[-1].get("mid", "unknown")
-                        if st.session_state.chat[-1]["role"] == "user" and current_mid != st.session_state.last_processed_mid:
-                            reply = agro.get_response(user_msg, history[:-1], context=context)
-                            st.session_state.chat.append({"role": "assistant", "content": reply, "mid": f"ai_{current_mid}"})
-                            st.session_state.last_processed_mid = current_mid
-                    finally:
-                        st.session_state.ai_thinking = False
-                        st.rerun() # Refresh to show AI response
-
+            if st.session_state.get("ai_thinking", False):
+                try:
+                    agro = AIAgronomist(GEMINI_API_KEY)
+                    context = generate_farm_context(stats_df)
+                    history = st.session_state.chat[-10:]
+                    user_msg = st.session_state.chat[-1]["content"] if st.session_state.chat else ""
+                    
+                    current_mid = st.session_state.chat[-1].get("mid", "unknown")
+                    if st.session_state.chat[-1]["role"] == "user" and current_mid != st.session_state.last_processed_mid:
+                        reply = agro.get_response(user_msg, history[:-1], context=context)
+                        st.session_state.chat.append({"role": "assistant", "content": reply, "mid": f"ai_{current_mid}"})
+                        st.session_state.last_processed_mid = current_mid
+                finally:
+                    st.session_state.ai_thinking = False
+                    st.rerun()
 
 # --- COMPONENTS ---
 def st_html(html_str):
@@ -962,7 +951,10 @@ def render_evolution():
             c3.button("PURCHASE", key=item['name']+"_shop", width="stretch")
 
 def main():
-    if "chat" not in st.session_state: st.session_state.chat = []
+    if "chat" not in st.session_state: 
+        st.session_state.chat = [
+            {"role": "assistant", "content": "Greetings, Researcher. I am the **Precision Earth AI Advisor**, powered by **Gemini-3.1-Flash-Lite**. I specialize in real-time sensor telemetry analysis, identifying forensic soil health patterns (pH, EC, Moisture), and recommending automated hardware protocols like **Irrigation pulses** and **pH Neutralization**. I am standing by to assist with your plantation oversight.", "mid": "init_msg"}
+        ]
     if "chat_open" not in st.session_state: st.session_state.chat_open = False
     if "last_processed_mid" not in st.session_state: st.session_state.last_processed_mid = None
     if "selected_plot" not in st.session_state: st.session_state.selected_plot = None
@@ -1008,7 +1000,25 @@ def main():
                         st.warning("Identification name is required for access.")
         st.stop()
 
-    # ── 3. Sidebar (Simplified) ──────────────────────────────────
+    # ── 3. Data Ingestion (PRE-SIDEBAR FOR v17.2) ──────────────────
+    # Default file path
+    default_path = "plantation_soil_data.xlsm"
+    
+    # Check if we need to load differently cached or uploaded files
+    raw_df = load_data(default_path)
+    latest_stats_all, workbench_df = compute_stats(raw_df)
+    
+    # Determine current view stats
+    if st.session_state.hub_mode == "Live Readings":
+        active_stats = latest_stats_all.copy()
+        full_df = workbench_df.copy()
+    else:
+        avg_raw = workbench_df.groupby('plot_id').mean(numeric_only=True).reset_index()
+        avg_raw['timestamp'] = workbench_df['timestamp'].max() 
+        active_stats, _ = compute_stats(avg_raw)
+        full_df = workbench_df.copy()
+
+    # ── 4. Sidebar ───────────────────────────────────────────────
     with st.sidebar:
         if LOGO_B64:
             st.markdown(f"<div style='text-align:center; padding:30px;'><img src='data:image/png;base64,{LOGO_B64}' style='height:200px;'></div>", unsafe_allow_html=True)
@@ -1025,7 +1035,19 @@ def main():
         st.markdown("### LAB MONITOR v15")
 
         uploaded_file = st.file_uploader("📂 Ingest Core Samples", type=["csv", "xlsx", "xlsm"])
-        raw_df = load_data(uploaded_file if uploaded_file else "plantation_soil_data.xlsm")
+        if uploaded_file:
+             # If new samples uploaded, re-initialize data engine
+             raw_df = load_data(uploaded_file)
+             latest_stats_all, workbench_df = compute_stats(raw_df)
+             # Update active stats based on hub mode
+             if st.session_state.hub_mode == "Live Readings":
+                active_stats = latest_stats_all.copy()
+                full_df = workbench_df.copy()
+             else:
+                avg_raw = workbench_df.groupby('plot_id').mean(numeric_only=True).reset_index()
+                avg_raw['timestamp'] = workbench_df['timestamp'].max() 
+                active_stats, _ = compute_stats(avg_raw)
+                full_df = workbench_df.copy()
 
         st.divider()
         st.markdown("**Field Music**")
@@ -1053,23 +1075,14 @@ def main():
             st.rerun()
 
         st.divider()
-        # st.caption("💬 Use the 🌱 button (bottom-right) to open your AI Soil Advisor.")
+        st_html("<div class='label-tech' style='text-align:center;'>Digital Intelligence Hub</div>")
+        render_chat_widget(stats_df=active_stats, wide_mode=False) 
 
-    # ── 4. Main Body ─────────────────────────────────────────────
-    latest_stats_all, workbench_df = compute_stats(raw_df)
+    # ── 5. Main Body ─────────────────────────────────────────────
     render_header()
-    if st.session_state.hub_mode == "Live Readings":
-        stats = latest_stats_all.copy()
-        full_df = workbench_df.copy()
-    else:
-        # Calculate Field Average for the map status indicators
-        avg_raw = workbench_df.groupby('plot_id').mean(numeric_only=True).reset_index()
-        avg_raw['timestamp'] = workbench_df['timestamp'].max() 
-        # Re-run compute_stats on the averaged data to get status categories
-        stats, _ = compute_stats(avg_raw)
-        full_df = workbench_df.copy()
+    stats = active_stats # Already computed above
     
-    tabs = st.tabs(["FIELD MAP", "FORENSIC WORKBENCH", "PROTOCOLS", "EVOLUTION"])
+    tabs = st.tabs(["FIELD MAP", "FORENSIC WORKBENCH", "PROTOCOLS", "EVOLUTION", "AI ADVISOR"])
     with tabs[0]: render_farm_map(full_df, stats)
     with tabs[1]: 
         st.subheader("Data Science Master Workbench")
@@ -1170,6 +1183,7 @@ def main():
             st.plotly_chart(px.imshow(corr_df, text_auto=".2f", color_continuous_scale="Viridis"), width="stretch")
     with tabs[2]: render_protocols(stats)
     with tabs[3]: render_evolution()
+    with tabs[4]: render_chat_widget(stats_df=stats, wide_mode=True)
     
     if st.session_state.selected_plot:
         p_id = st.session_state.selected_plot
@@ -1180,8 +1194,7 @@ def main():
         except:
             st.session_state.selected_plot = None
 
-    # Floating Chat Widget
-    render_chat_widget(stats)
+    # (Chat widget button now handled in sidebar)
 
     # ── 6. Audio Injection ───────────────────────────────────────
     music_file = "music/MP3Now.com_YouTube_Stardew-Valley-OST-Fall-The-Smell-of-Mus_Media_omVFjGHx0FQ_009_128k.mp3"
