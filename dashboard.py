@@ -496,8 +496,108 @@ def get_style(bg_b64, ai_b64, overlay_b64):
         font-family: 'Silkscreen', cursive; 
         font-size: 0.9rem; 
         color: var(--primary); 
-        letter-spacing: 0.2em; 
-        margin-bottom: 10px;
+        letter-spacing: 2px;
+        margin-bottom: 8px;
+    }}
+
+    /* v15.8 Forensic 'Lens' Polish */
+    @keyframes forensic-pulse {{
+        0% {{ transform: scale(1); box-shadow: 0 0 10px rgba(78,222,163,0.3); }}
+        50% {{ transform: scale(1.05); box-shadow: 0 0 18px rgba(78,222,163,0.6); }}
+        100% {{ transform: scale(1); box-shadow: 0 0 10px rgba(78,222,163,0.3); }}
+    }}
+
+    div[data-testid="stPopover"] button {{
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
+        padding: 0 !important;
+        margin-left: 5px !important; /* Breathing Room: Tight but No Overlap */
+        color: var(--primary) !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: bold !important;
+        font-size: 2.2rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: all 0.3s ease;
+        overflow: hidden !important; 
+        line-height: 1 !important;
+    }}
+    /* Vaporize the default Streamlit Header Anchors (🔗) */
+    .stMarkdown h1 a, .stMarkdown h2 a, .stMarkdown h3 a {{
+        display: none !important;
+    }}
+    /* Hard-Center the larger glyph */
+    div[data-testid="stPopover"] button > div:nth-child(1) {{
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important;
+        min-width: 32px !important;
+        margin-left: -1px !important;
+    }}
+    /* Ultimate Nuke for chevron */
+    div[data-testid="stPopover"] button svg,
+    div[data-testid="stPopover"] button [data-testid="stIcon"],
+    div[data-testid="stPopover"] button div:nth-child(2) {{
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        opacity: 0 !important;
+        position: absolute !important;
+        left: -100px !important;
+    }}
+    div[data-testid="stPopover"] button:hover {{
+        background: transparent !important;
+        filter: drop-shadow(0 0 15px var(--primary));
+        transform: scale(1.1);
+    }}
+    /* Neutralize the second child (where the arrow lives) */
+    div[data-testid="stPopover"] button > div:nth-child(2),
+    div[data-testid="stPopover"] button svg,
+    div[data-testid="stPopover"] button [data-testid="stIcon"],
+    div[data-testid="stPopover"] button span:empty,
+    div[data-testid="stPopover"] button i {{
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: absolute !important;
+        visibility: hidden !important;
+    }}
+    div[data-testid="stPopover"] button:hover {{
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 25px var(--primary) !important;
+        animation: none;
+        transform: scale(1.1) rotate(10deg);
+    }}
+    /* The Popover Card Content: Target the baseui portal style */
+    div[data-baseweb="popover"] {{
+        background-color: #0D1513 !important;
+        border: 2px solid var(--primary) !important;
+        border-radius: 8px !important;
+        box-shadow: 8px 8px 0px rgba(0,0,0,0.5) !important;
+    }}
+    div[data-baseweb="popover"] p, div[data-baseweb="popover"] span {{
+        color: #F8FAFC !important;
+        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        font-size: 0.95rem !important;
+        line-height: 1.6 !important;
+    }}
+    /* Caption forensic override */
+    .stCaption p {{
+        font-family: 'Plus Jakarta Sans' !important;
+        color: rgba(255,255,255,0.7) !important;
+        font-style: italic !important;
+        line-height: 1.2 !important;
+        margin-top: -5px !important;
+        letter-spacing: 0.2px !important;
     }}
 
     /* RPG Buttons: Clean Integration */
@@ -797,31 +897,55 @@ def render_protocols(stats):
     
     ca, cb, cc = st.columns(3)
     with ca:
-        if st.button(f"Trigger Irrigation::{p_id}", use_container_width=True):
+        # v16.10 Forensic Alignment
+        c_title, c_pop = st.columns([0.8, 0.2], vertical_alignment="center")
+        with c_title:
+             st.markdown("<p style='margin-bottom:0; font-family:Silkscreen; font-size:0.8rem; color:#4EDEA3; white-space:nowrap;'>Trigger Irrigation</p>", unsafe_allow_html=True)
+        with c_pop:
+            with st.popover("ⓘ", use_container_width=False):
+                st.markdown("**What does this do?**")
+                st.write("Ensures steady hydration. Use this if the **Moisture Timeline** shows a steady decline below 30% to prevent root-zone drought stress.")
+            
+        if st.button(f"INITIALIZE::{p_id}", key=f"irr_{p_id}", use_container_width=True):
             with st.status(f"Transmitting to {p_id}...", expanded=True) as s:
-                st.write("Initializing Solenoid Valve...")
+                st.write("Establishing Handshake...")
                 time.sleep(0.5)
-                st.write("Confirming Water Pressure...")
-                time.sleep(0.5)
-                st.write("Pulsing Hydraulic Lines...")
-                time.sleep(0.5)
-                s.update(label="Action Complete: Irrigation Pulse Successful", state="complete")
+                st.write("Valve Engagement confirmed.")
+                s.update(label="Irrigation Pulse Complete!", state="complete")
+        st.caption("High-Precision Hydration Pulse.")
+
     with cb:
-        if st.button(f"Flush Soil::{p_id}", use_container_width=True):
+        c_title, c_pop = st.columns([0.7, 0.3], vertical_alignment="center")
+        with c_title:
+            st.markdown("<p style='margin-bottom:0; font-family:Silkscreen; font-size:0.8rem; color:#4EDEA3; white-space:nowrap;'>Flush Soil</p>", unsafe_allow_html=True)
+        with c_pop:
+            with st.popover("ⓘ", use_container_width=False):
+                st.markdown("**What does this do?**")
+                st.write("A deep hydraulic purge. Use this if the **Salinity (EC)** levels are too high (indicated by red heatmaps) to wash away excess mineral buildup.")
+                
+
+        if st.button(f"EXTRACT::{p_id}", key=f"flush_{p_id}", use_container_width=True):
             with st.status(f"Transmitting to {p_id}...", expanded=True) as s:
-                st.write("Injecting Desalination Wash...")
-                time.sleep(0.5)
-                st.write("Extracting Brine Samples...")
-                time.sleep(0.5)
-                s.update(label="Action Complete: EC Drift Corrected", state="complete")
+                st.write("Opening Purge Valves...")
+                time.sleep(0.8)
+                s.update(label="Soil Flush Cycle Finished.", state="complete")
+        st.caption("Intense Hydraulic Purge Cycle.")
+
     with cc:
-        if st.button(f"Inject pH Buffer::{p_id}", use_container_width=True):
+        c_title, c_pop = st.columns([0.65, 0.35], vertical_alignment="center")
+        with c_title:
+            st.markdown("<p style='margin-bottom:0; font-family:Silkscreen; font-size:0.8rem; color:#4EDEA3; white-space:nowrap;'>pH Buffer</p>", unsafe_allow_html=True)
+        with c_pop:
+            with st.popover("ⓘ", use_container_width=False):
+                st.markdown("**What does this do?**")
+                st.write("Releases stabilizing agents. Think of this as an **'acid-relief tablet'** for your soil. Use it if your pH probes drop below 6.0.")
+
+        if st.button(f"STABILIZE::{p_id}", key=f"ph_{p_id}", use_container_width=True):
             with st.status(f"Transmitting to {p_id}...", expanded=True) as s:
-                st.write("Calibrating pH Regulator...")
-                time.sleep(0.5)
-                st.write("Dispensing Carbonate Buffer...")
-                time.sleep(0.5)
-                s.update(label="Action Complete: Soil Chemistry Balanced", state="complete")
+                st.write("Calibrating pH Injectors...")
+                time.sleep(0.6)
+                s.update(label="Alkaline Pulse Dispatched.", state="complete")
+        st.caption("Neutralizes High Soil Acidity.")
 
 def render_evolution():
     st_html("<div class='label-tech'>Pierre's Exotic Research Lab</div>")
@@ -955,6 +1079,17 @@ def main():
         with t1:
             pdf['date'] = pdf['timestamp'].dt.date
             daily_rain = pdf.groupby('date')['rainfall_mm'].sum().reset_index()
+            
+            # --- v16.9 Breathing Room Trailing HEADER ---
+            h_title, h_pop = st.columns([0.85, 0.15], vertical_alignment="center")
+            with h_title:
+                st.markdown("<h3 style='white-space:nowrap; margin-bottom:0;'>Primary Metric Timeline</h3>", unsafe_allow_html=True)
+            with h_pop:
+                with st.popover("ⓘ", use_container_width=False):
+                    st.markdown("**How to Read this Analysis?**")
+                    st.write("Shows if your sensor readings are flat and stable. **Spikes or sharp drops** mean the environment changed too quickly for plants to adapt. The blue bars represent rainfall intensity.")
+            st.caption("24-Hour Plot Stability Monitoring.")
+            
             fig = make_subplots(specs=[[{"secondary_y": True}]])
             fig.add_trace(go.Bar(x=daily_rain['date'], y=daily_rain['rainfall_mm'], name="Daily Rainfall", 
                                 marker_color="#38bdf8", opacity=0.4), secondary_y=True)
@@ -974,14 +1109,42 @@ def main():
             fig.update_yaxes(title_text="Primary Metrics (Moisture/Temp)", secondary_y=False)
             fig.update_yaxes(title_text="Rainfall Intensity (mm)", secondary_y=True)
             st.plotly_chart(fig, width="stretch")
-            st.subheader("Categorical Heatmap")
+            
+            st.divider()
+            
+            # --- v16.9 Breathing Room Trailing HEADER ---
+            hb_title, hb_pop = st.columns([0.88, 0.12], vertical_alignment="center")
+            with hb_title:
+                st.markdown("<h3 style='white-space:nowrap; margin-bottom:0;'>Categorical Status Heatmap</h3>", unsafe_allow_html=True)
+            with hb_pop:
+                with st.popover("ⓘ", use_container_width=False):
+                    st.markdown("**How to Read the Heatmap?**")
+                    st.write("This map highlights **'High Stress'** areas in Red. If you see a cluster of red nodes (dry) or dark blue (saturated), the specific zone needs immediate forensic intervention.")
+            st.caption("Plot Health Snapshot: Moisture levels over time.")
+            
             h_data = get_categorical_heatmap_data(workbench_df, p_id)
             h_data['day'] = h_data['timestamp'].dt.strftime('%b %d')
             h_data['hour'] = h_data['timestamp'].dt.hour
             h_pivot = h_data.pivot(index='day', columns='hour', values='moisture_cat')
-            st.plotly_chart(px.imshow(h_pivot, color_continuous_scale=[[0, '#ef4444'], [0.5, '#fbbf24'], [1, '#4edea3']]), width="stretch")
+            
+            fig_h = px.imshow(h_pivot, 
+                              aspect="auto",
+                              color_continuous_scale=[[0, '#ef4444'], [0.5, '#fbbf24'], [1, '#4edea3']],
+                              labels=dict(x="Hour of Day", y="Date", color="Stress Level")
+                             )
+            fig_h.update_layout(plot_bgcolor='rgba(0,0,0,0)', font_color="#FFF", height=300)
+            st.plotly_chart(fig_h, use_container_width=True)
+
         with t2:
-            st.subheader("Biological Health Envelopes")
+            # --- v16.9 Breathing Room Trailing HEADER ---
+            h_title, h_pop = st.columns([0.86, 0.14], vertical_alignment="center")
+            with h_title:
+                st.markdown("<h3 style='white-space:nowrap; margin-bottom:0;'>Biological Health Envelopes</h3>", unsafe_allow_html=True)
+            with h_pop:
+                with st.popover("ⓘ", use_container_width=False):
+                    st.write("Identifies critical envelopes for plant health. **Salinity (EC)** correlates to fertilisation, and **Thermal** plots how moisture buffers heat spikes.")
+            st.caption("Chemistry Balance Envelopes.")
+            
             c1, c2 = st.columns(2)
             with c1:
                 fig2 = px.scatter(pdf, x='soil_ph', y='soil_ec_ds_m', trendline="ols", trendline_color_override="#4EDEA3", title="Salinity vs pH Envelope")
@@ -992,7 +1155,17 @@ def main():
                 fig_t = px.scatter(pdf, x='soil_moisture_pct', y='soil_temp_c', trendline="lowess", trendline_color_override="#fbbf24", title="Thermal vs Moisture Envelope")
                 fig_t.update_layout(plot_bgcolor='rgba(0,0,0,0)', font_color="#FFF")
                 st.plotly_chart(fig_t, width="stretch")
+
         with t3:
+            # --- v16.9 Breathing Room Trailing HEADER ---
+            h_title, h_pop = st.columns([0.85, 0.15], vertical_alignment="center")
+            with h_title:
+                st.markdown("<h3 style='white-space:nowrap; margin-bottom:0;'>Forensic Correlation Matrix</h3>", unsafe_allow_html=True)
+                st.caption("Variable Synchronization Metrics.")
+            with h_pop:
+                with st.popover("ⓘ", use_container_width=True):
+                    st.write("A score of **1.00** means the variables move perfectly together. Negative scores mean they move in opposite directions.")
+            
             corr_df = pdf[['soil_moisture_pct', 'soil_ec_ds_m', 'soil_ph', 'soil_temp_c', 'rainfall_mm', 'lagged_rainfall_mm']].corr()
             st.plotly_chart(px.imshow(corr_df, text_auto=".2f", color_continuous_scale="Viridis"), width="stretch")
     with tabs[2]: render_protocols(stats)
