@@ -656,12 +656,38 @@ class AIAgronomist:
         return response.text
 
 # --- CHAT UTILS ---
-def generate_farm_context(stats):
+def generate_farm_context(stats, full_df=None):
     if stats is None or (isinstance(stats, pd.DataFrame) and stats.empty): 
         return "Field status unknown: Awaiting sensor calibration."
-    ctx = "Current Farm Status: "
+    
+    # 1. CURRENT SNAPSHOT BRIEFING
+    ctx = "--- [FORENSIC DATA LEDGER] ---\n"
+    ctx += "1. CURRENT STATUS:\n"
     for _, row in stats.iterrows():
-        ctx += f"[{row['plot_id']}: {row['overall_status']}, Moisture {row['soil_moisture_pct']:.1f}%, EC {row['soil_ec_ds_m']:.2f}, pH {row['soil_ph']:.1f}, Temp {row.get('soil_temp_c', 0):.1f}C] "
+        ctx += f"[{row['plot_id']}: {row['overall_status']}, Moisture {row['soil_moisture_pct']:.1f}%, EC {row['soil_ec_ds_m']:.2f}, pH {row['soil_ph']:.1f}, Temp {row.get('soil_temp_c', 0):.1f}C]\n"
+    
+    # 2. FULL-SPECTRUM FORENSIC ANALYSIS (v18.5)
+    if full_df is not None and not full_df.empty:
+        ctx += "\n2. 24H STATISTICAL ENVELOPES:\n"
+        # Calculate 24h stats for each plot
+        cols = ['soil_moisture_pct', 'soil_ec_ds_m', 'soil_ph', 'soil_temp_c']
+        grouped = full_df.groupby('plot_id')[cols].agg(['min', 'max', 'mean'])
+        for pid, s in grouped.iterrows():
+            ctx += f"- {pid} Envelopes:\n"
+            ctx += f"  - Moisture: Range [{s[('soil_moisture_pct', 'min')]:.1f}, {s[('soil_moisture_pct', 'max')]:.1f}] Mean {s[('soil_moisture_pct', 'mean')]:.1f}\n"
+            ctx += f"  - EC (Salinity): Range [{s[('soil_ec_ds_m', 'min')]:.2f}, {s[('soil_ec_ds_m', 'max')]:.2f}] Mean {s[('soil_ec_ds_m', 'mean')]:.2f}\n"
+            ctx += f"  - pH: Range [{s[('soil_ph', 'min')]:.1f}, {s[('soil_ph', 'max')]:.1f}] Mean {s[('soil_ph', 'mean')]:.1f}\n"
+
+        # 3. FORENSIC LANDMARKS (Recent Rate of Change)
+        ctx += "\n3. RECENT RATE OF CHANGE (LAST 2HRS):\n"
+        # Simplified trend detection 
+        for pid in full_df['plot_id'].unique():
+            p_data = full_df[full_df['plot_id'] == pid].tail(10) # Last 10 readings
+            if len(p_data) >= 2:
+                m_change = p_data['soil_moisture_pct'].iloc[-1] - p_data['soil_moisture_pct'].iloc[0]
+                e_change = p_data['soil_ec_ds_m'].iloc[-1] - p_data['soil_ec_ds_m'].iloc[0]
+                ctx += f"- {pid}: Moisture {'▲' if m_change > 0 else '▼'} {abs(m_change):.1f}%, EC {'▲' if e_change > 0 else '▼'} {abs(e_change):.2f}\n"
+    
     return ctx
 # --- CHAT UTILS ---
 USER_ICON_SVG = '<svg viewBox="0 0 24 24" fill="%234EDEA3" xmlns="http://www.w3.org/2000/svg"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>'
@@ -752,7 +778,7 @@ def render_chat_messages(thinking=False):
     if thinking:
         st_html(f"<div class='ai-msg-container'><img src='data:image/png;base64,{AI_ICON_B64}' class='profile-img'><div class='msg-bubble thinking-bubble'><div class='forensic-spinner'></div> ANALYZING SENSOR STREAMS...</div></div>")
 
-def render_chat_widget(stats_df, wide_mode=False):
+def render_chat_widget(stats_df, full_df=None, wide_mode=False):
     if "last_processed_mid" not in st.session_state: st.session_state.last_processed_mid = None
 
     if not wide_mode:
@@ -780,7 +806,7 @@ def render_chat_widget(stats_df, wide_mode=False):
             if st.session_state.get("ai_thinking", False):
                 try:
                     agro = AIAgronomist(GEMINI_API_KEY)
-                    context = generate_farm_context(stats_df)
+                    context = generate_farm_context(stats_df, full_df)
                     history = st.session_state.chat[-10:]
                     user_msg = st.session_state.chat[-1]["content"] if st.session_state.chat else ""
                     
@@ -1076,7 +1102,7 @@ def main():
 
         st.divider()
         st_html("<div class='label-tech' style='text-align:center;'>Digital Intelligence Hub</div>")
-        render_chat_widget(stats_df=active_stats, wide_mode=False) 
+        render_chat_widget(stats_df=active_stats, full_df=full_df, wide_mode=False) 
 
     # ── 5. Main Body ─────────────────────────────────────────────
     render_header()
@@ -1183,7 +1209,7 @@ def main():
             st.plotly_chart(px.imshow(corr_df, text_auto=".2f", color_continuous_scale="Viridis"), width="stretch")
     with tabs[2]: render_protocols(stats)
     with tabs[3]: render_evolution()
-    with tabs[4]: render_chat_widget(stats_df=stats, wide_mode=True)
+    with tabs[4]: render_chat_widget(stats_df=stats, full_df=full_df, wide_mode=True)
     
     if st.session_state.selected_plot:
         p_id = st.session_state.selected_plot
