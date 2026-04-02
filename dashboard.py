@@ -264,21 +264,30 @@ def get_style(bg_b64, ai_b64, overlay_b64):
         letter-spacing: 1px !important;
     }}
 
-    /* Tab Upscaling (FIX 4) */
+    /* Tab Forensic Overhaul (v15.5) */
     button[data-baseweb="tab"] {{
-        font-size: 1.2rem !important;
-        padding: 15px 30px !important;
-        font-family: 'Plus Jakarta Sans', sans-serif !important;
+        font-size: 1.1rem !important;
+        padding: 12px 24px !important;
+        font-family: 'Silkscreen', cursive !important;
         font-weight: 600 !important;
-        transition: all 0.3s ease !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        color: rgba(255,255,255,0.6) !important;
+        border: none !important;
+        background: transparent !important;
+    }}
+    button[data-baseweb="tab"][aria-selected="true"] {{
+        color: var(--primary) !important;
+        text-shadow: 0 0 10px rgba(78,222,163,0.5) !important;
     }}
     button[data-baseweb="tab"]:hover {{
-        color: var(--primary) !important;
-        background: rgba(78,222,163,0.05) !important;
+        color: #FFF !important;
+        background: rgba(78,222,163,0.1) !important;
     }}
     div[data-baseweb="tab-highlight"] {{
         background-color: var(--primary) !important;
-        height: 4px !important;
+        height: 6px !important;
+        box-shadow: 0 0 20px var(--primary) !important;
+        border-radius: 3px !important;
     }}
 
     /* Chat Bubbles with Profiles */
@@ -426,6 +435,62 @@ def get_style(bg_b64, ai_b64, overlay_b64):
     }}
     .badge-warn {{ background: #fbbf24; color: #000; padding: 0 5px; border-radius: 2px; font-weight: 700; }}
     .badge-crit {{ background: #ef4444; color: #000; padding: 0 5px; border-radius: 2px; font-weight: 700; }}
+
+    /* 4. INDUSTRIAL METRIC FRAMING (v15.5) */
+    [data-testid="stMetric"] {{
+        background: #0D1513 !important;
+        border: 2px solid var(--primary-dim) !important;
+        border-radius: 8px !important;
+        padding: 15px 20px !important;
+        box-shadow: inset 0 0 20px rgba(78,222,163,0.05), 0 4px 15px rgba(0,0,0,0.4) !important;
+        transition: all 0.3s ease !important;
+    }}
+    [data-testid="stMetric"]:hover {{
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 25px rgba(78,222,163,0.2) !important;
+        transform: translateY(-2px);
+    }}
+    [data-testid="stMetricValue"] div {{
+        font-family: 'JetBrains Mono', monospace !important;
+        font-weight: 700 !important;
+        color: #FFF !important;
+        font-size: 2.2rem !important;
+    }}
+    [data-testid="stMetricLabel"] p {{
+        font-family: 'Silkscreen' !important;
+        text-transform: uppercase !important;
+        letter-spacing: 1px !important;
+        color: var(--primary) !important;
+        opacity: 0.8 !important;
+    }}
+
+    /* 5. RADIO BUTTON WOODIFICATION (v15.5) */
+    div[data-testid="stRadio"] label {{
+        font-family: 'Silkscreen' !important;
+        color: #FFF !important;
+    }}
+    div[data-testid="stRadio"] div[role="radiogroup"] > label {{
+        background: #7d5233 !important;
+        border: 3px solid #3e2723 !important;
+        padding: 10px 15px !important;
+        margin: 5px 0 !important;
+        border-radius: 4px !important;
+        box-shadow: 4px 4px 0px rgba(0,0,0,0.5) !important;
+        transition: all 0.2s ease !important;
+        cursor: pointer !important;
+        display: block !important;
+        width: 100% !important;
+    }}
+    div[data-testid="stRadio"] div[role="radiogroup"] > label:hover {{
+        background: #8d6e63 !important;
+        transform: translateX(4px);
+    }}
+    div[data-testid="stRadio"] div[role="radiogroup"] > label[data-checked="true"] {{
+        background: #5d4037 !important;
+        border-color: var(--primary) !important;
+        box-shadow: 2px 2px 0px rgba(0,0,0,0.8) !important;
+        transform: translate(2px, 2px);
+    }}
 
     .label-tech {{ 
         font-family: 'Silkscreen', cursive; 
