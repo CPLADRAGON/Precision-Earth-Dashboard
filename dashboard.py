@@ -22,7 +22,9 @@ from dashboard_logic import load_data, compute_stats, get_categorical_heatmap_da
 
 try:
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
- 
+except Exception:
+    # If using local .streamlit/secrets.toml or if key is missing
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 # --- HELPER UTILS ---
 @st.cache_data
