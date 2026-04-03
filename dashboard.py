@@ -22,8 +22,7 @@ from dashboard_logic import load_data, compute_stats, get_categorical_heatmap_da
 
 try:
     GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
-except:
-    GEMINI_API_KEY = "AIzaSyBXQZwWuXX0vf6HQBTBXoFcCs3ZkGux23M"
+ 
 
 # --- HELPER UTILS ---
 @st.cache_data
