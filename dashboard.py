@@ -80,15 +80,26 @@ def get_style(bg_b64, ai_b64, overlay_b64):
         pointer-events: none !important;
     }}
     
-    /* Absolute Sidebar Persistence & Scroll Fix */
+    /* Absolute Sidebar Persistence & Scroll Fix (Scale for Mobile) */
     [data-testid="stSidebar"] {{
         transform: none !important;
         visibility: visible !important;
         min-width: 350px !important;
         max-width: 350px !important;
     }}
+    @media (max-width: 768px) {{
+        [data-testid="stSidebar"] {{
+            min-width: 100% !important;
+            max-width: 100% !important;
+        }}
+    }}
     section[data-testid="stSidebar"] > div:first-child {{
         min-width: 350px !important;
+    }}
+    @media (max-width: 768px) {{
+        section[data-testid="stSidebar"] > div:first-child {{
+            min-width: 100% !important;
+        }}
     }}
     [data-testid="stSidebarContent"] {{
         overflow-y: auto !important;
@@ -109,6 +120,16 @@ def get_style(bg_b64, ai_b64, overlay_b64):
         visibility: visible !important;
         opacity: 1 !important;
         z-index: 99 !important;
+    }}
+    @media (max-width: 768px) {{
+        .brand-header {{
+            padding: 15px 20px !important;
+            min-height: 100px !important;
+            gap: 15px !important;
+        }}
+        .brand-title {{
+            font-size: 1.2rem !important;
+        }}
     }}
     
     /* STATION AUTHORIZATION: Bulletproof Solid Wrapper */
@@ -649,14 +670,22 @@ class AIAgronomist:
                                        parts=[types.Part.from_text(text=msg["msg"] if "msg" in msg else msg["content"])]))
         contents.append(types.Content(role="user", parts=[types.Part.from_text(text=prompt)]))
         
-        response = self.client.models.generate_content(
-            model=self.model_id,
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction="Professional Ag-Forensic Lead. Concise, data-driven. Use the provided FIELD CONTEXT to answer plot-specific questions. Focus on Lagged Rainfall and Health Envelopes."
+        try:
+            response = self.client.models.generate_content(
+                model=self.model_id,
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    system_instruction="Professional Ag-Forensic Lead. Concise, data-driven. Use the provided FIELD CONTEXT to answer plot-specific questions. Focus on Lagged Rainfall and Health Envelopes."
+                )
             )
-        )
-        return response.text
+            return response.text
+        except Exception as e:
+            err_msg = str(e)
+            if "PERMISSION_DENIED" in err_msg or "403" in err_msg:
+                return "⚠️ **SECURE ACCESS DENIED**: Your API Key is invalid or has been revoked (possibly due to a leak). Please rotate your key in Streamlit Secrets."
+            if "NOT_FOUND" in err_msg or "404" in err_msg:
+                return f"⚠️ **MODEL NOT FOUND**: The model `{self.model_id}` is unavailable. Attempting fallback..."
+            return f"⚠️ **AI CORE ERROR**: {err_msg}"
 
 # --- CHAT UTILS ---
 def generate_farm_context(stats, full_df=None):
@@ -794,7 +823,7 @@ def render_chat_widget(stats_df, full_df=None, wide_mode=False):
         # --- SIDEBAR BUTTON MODE ---
         c1, c2, c3 = st.columns([0.1, 0.8, 0.1])
         with c2:
-            st.button("Consult with AI", key="junimo_fab_btn", use_container_width=True, help="Switch to AI Advisor Tab")
+            st.button("Consult with AI", key="junimo_fab_btn", width="stretch", help="Switch to AI Advisor Tab")
             st.caption("Select the **'AI ADVISOR'** tab above to begin.")
     else:
         # --- WIDE-SCREEN TAB MODE ---
@@ -861,7 +890,7 @@ def render_plot_detail(plot_id, stats_row):
     c_img, c_data = st.columns([1, 2], gap="large")
     with c_img:
         path, _ = get_crop_visual(stats_row)
-        st.image(path, caption=f"FIELD NODE: {plot_id}", use_container_width=True)
+        st.image(path, caption=f"FIELD NODE: {plot_id}", width="stretch")
         st_html(f"<div style='text-align:center; font-family:Silkscreen; color:var(--primary); font-size:1.2rem;'>STATUS: {stats_row['overall_status']}</div>")
     with c_data:
         st.subheader(f"Sensor Streams: {plot_id}")
@@ -926,11 +955,11 @@ def render_protocols(stats):
         with c_title:
              st.markdown("<p style='margin-bottom:0; font-family:Silkscreen; font-size:0.8rem; color:#4EDEA3; white-space:nowrap;'>Trigger Irrigation</p>", unsafe_allow_html=True)
         with c_pop:
-            with st.popover("ⓘ", use_container_width=False):
+            with st.popover("ⓘ", width="content"):
                 st.markdown("**What does this do?**")
                 st.write("Ensures steady hydration. Use this if the **Moisture Timeline** shows a steady decline below 30% to prevent root-zone drought stress.")
             
-        if st.button(f"INITIALIZE::{p_id}", key=f"irr_{p_id}", use_container_width=True):
+        if st.button(f"INITIALIZE::{p_id}", key=f"irr_{p_id}", width="stretch"):
             with st.status(f"Transmitting to {p_id}...", expanded=True) as s:
                 st.write("Establishing Handshake...")
                 time.sleep(0.5)
@@ -943,12 +972,12 @@ def render_protocols(stats):
         with c_title:
             st.markdown("<p style='margin-bottom:0; font-family:Silkscreen; font-size:0.8rem; color:#4EDEA3; white-space:nowrap;'>Flush Soil</p>", unsafe_allow_html=True)
         with c_pop:
-            with st.popover("ⓘ", use_container_width=False):
+            with st.popover("ⓘ", width="content"):
                 st.markdown("**What does this do?**")
                 st.write("A deep hydraulic purge. Use this if the **Salinity (EC)** levels are too high (indicated by red heatmaps) to wash away excess mineral buildup.")
                 
 
-        if st.button(f"EXTRACT::{p_id}", key=f"flush_{p_id}", use_container_width=True):
+        if st.button(f"EXTRACT::{p_id}", key=f"flush_{p_id}", width="stretch"):
             with st.status(f"Transmitting to {p_id}...", expanded=True) as s:
                 st.write("Opening Purge Valves...")
                 time.sleep(0.8)
@@ -960,11 +989,11 @@ def render_protocols(stats):
         with c_title:
             st.markdown("<p style='margin-bottom:0; font-family:Silkscreen; font-size:0.8rem; color:#4EDEA3; white-space:nowrap;'>pH Buffer</p>", unsafe_allow_html=True)
         with c_pop:
-            with st.popover("ⓘ", use_container_width=False):
+            with st.popover("ⓘ", width="content"):
                 st.markdown("**What does this do?**")
                 st.write("Releases stabilizing agents. Think of this as an **'acid-relief tablet'** for your soil. Use it if your pH probes drop below 6.0.")
 
-        if st.button(f"STABILIZE::{p_id}", key=f"ph_{p_id}", use_container_width=True):
+        if st.button(f"STABILIZE::{p_id}", key=f"ph_{p_id}", width="stretch"):
             with st.status(f"Transmitting to {p_id}...", expanded=True) as s:
                 st.write("Calibrating pH Injectors...")
                 time.sleep(0.6)
@@ -1004,7 +1033,7 @@ def render_iot_command():
             ip_addr = st.text_input("TARGET IP / GATEWAY ADDRESS", placeholder="e.g. 192.168.1.104")
         with c2:
             st.markdown("<div style='height:28px;'></div>", unsafe_allow_html=True)
-            if st.button("INITIALIZE LINK", use_container_width=True):
+            if st.button("INITIALIZE LINK", width="stretch"):
                 st.session_state.provisioning_step = 1
         
         if st.session_state.provisioning_step > 0:
@@ -1073,15 +1102,15 @@ def render_iot_command():
                     # Tactical Neon Buttons
                     c1, c2, c3 = st.columns(3)
                     with c1:
-                        if st.button("📡 PING", key=f"ping_{device['id']}", use_container_width=True):
+                        if st.button("📡 PING", key=f"ping_{device['id']}", width="stretch"):
                             st.toast(f"PING response from {device['id']}: 24ms", icon="✅")
                     with c2:
                         btn_label = "🔌 SHUTDOWN" if is_online else "⚡ REBOOT"
-                        if st.button(btn_label, key=f"tog_{device['id']}", use_container_width=True):
+                        if st.button(btn_label, key=f"tog_{device['id']}", width="stretch"):
                             device['status'] = "OFFLINE" if is_online else "Online"
                             st.rerun()
                     with c3:
-                        if st.button("🛠️ CONFIG", key=f"ovr_{device['id']}", use_container_width=True):
+                        if st.button("🛠️ CONFIG", key=f"ovr_{device['id']}", width="stretch"):
                             st.sidebar.info(f"Calibration menu for {device['id']} active.")
 
     st.markdown("""
@@ -1183,7 +1212,7 @@ def main():
                 st.markdown("</div>", unsafe_allow_html=True)
                 
                 st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
-                if st.button("INITIALIZE FORENSIC FEED", key="auth_btn", use_container_width=True):
+                if st.button("INITIALIZE FORENSIC FEED", key="auth_btn", width="stretch"):
                     if name:
                         st.session_state.researcher_name = name
                         st.session_state.first_visit = False
@@ -1290,7 +1319,7 @@ def main():
             with h_title:
                 st.markdown("<h3 style='white-space:nowrap; margin-bottom:0;'>Primary Metric Timeline</h3>", unsafe_allow_html=True)
             with h_pop:
-                with st.popover("ⓘ", use_container_width=False):
+                with st.popover("ⓘ", width="content"):
                     st.markdown("**How to Read this Analysis?**")
                     st.write("Shows if your sensor readings are flat and stable. **Spikes or sharp drops** mean the environment changed too quickly for plants to adapt. The blue bars represent rainfall intensity.")
             st.caption("24-Hour Plot Stability Monitoring.")
@@ -1322,7 +1351,7 @@ def main():
             with hb_title:
                 st.markdown("<h3 style='white-space:nowrap; margin-bottom:0;'>Categorical Status Heatmap</h3>", unsafe_allow_html=True)
             with hb_pop:
-                with st.popover("ⓘ", use_container_width=False):
+                with st.popover("ⓘ", width="content"):
                     st.markdown("**How to Read the Heatmap?**")
                     st.write("This map highlights **'High Stress'** areas in Red. If you see a cluster of red nodes (dry) or dark blue (saturated), the specific zone needs immediate forensic intervention.")
             st.caption("Plot Health Snapshot: Moisture levels over time.")
@@ -1338,7 +1367,7 @@ def main():
                               labels=dict(x="Hour of Day", y="Date", color="Stress Level")
                              )
             fig_h.update_layout(plot_bgcolor='rgba(0,0,0,0)', font_color="#FFF", height=300)
-            st.plotly_chart(fig_h, use_container_width=True)
+            st.plotly_chart(fig_h, width="stretch")
 
         with t2:
             # --- v16.9 Breathing Room Trailing HEADER ---
@@ -1346,7 +1375,7 @@ def main():
             with h_title:
                 st.markdown("<h3 style='white-space:nowrap; margin-bottom:0;'>Biological Health Envelopes</h3>", unsafe_allow_html=True)
             with h_pop:
-                with st.popover("ⓘ", use_container_width=False):
+                with st.popover("ⓘ", width="content"):
                     st.write("Identifies critical envelopes for plant health. **Salinity (EC)** correlates to fertilisation, and **Thermal** plots how moisture buffers heat spikes.")
             st.caption("Chemistry Balance Envelopes.")
             
@@ -1368,7 +1397,7 @@ def main():
                 st.markdown("<h3 style='white-space:nowrap; margin-bottom:0;'>Forensic Correlation Matrix</h3>", unsafe_allow_html=True)
                 st.caption("Variable Synchronization Metrics.")
             with h_pop:
-                with st.popover("ⓘ", use_container_width=True):
+                with st.popover("ⓘ", width="stretch"):
                     st.write("A score of **1.00** means the variables move perfectly together. Negative scores mean they move in opposite directions.")
             
             corr_df = pdf[['soil_moisture_pct', 'soil_ec_ds_m', 'soil_ph', 'soil_temp_c', 'rainfall_mm', 'lagged_rainfall_mm']].corr()
