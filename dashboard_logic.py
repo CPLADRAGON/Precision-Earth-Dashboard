@@ -1,5 +1,7 @@
 import pandas as pd
+import streamlit as st
 
+@st.cache_data
 def load_data(file_input):
     """
     Loads soil data from a file path or UploadedFile buffer.
@@ -24,6 +26,7 @@ def load_data(file_input):
     except Exception as e:
         raise ValueError(f"Format Error: {str(e)}")
 
+@st.cache_data
 def compute_stats(df):
     """Computes basic soil health stats and alerts."""
     # Ensure dataframe is sorted for lagging

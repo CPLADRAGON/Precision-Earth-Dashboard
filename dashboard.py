@@ -44,6 +44,7 @@ def render_bgm(file_path, play=True):
         st.markdown('</div>', unsafe_allow_html=True)
 
 # --- BRANDING UTILS ---
+@st.cache_data
 def get_base64_img(path):
     if not os.path.exists(path): return ""
     try:
@@ -846,14 +847,14 @@ def get_crop_visual(row):
     m_status = row['moisture_status']
     ec_status = row['ec_status']
     ph_status = row['ph_status']
-    if status == 'Optimal': return "grphics/healthy_crop.png", "#4edea3"
-    if m_status == 'Critical': return "grphics/dryingtodie_crop.png", "#ef4444"
-    if ec_status == 'Critical': return "grphics/salty_stressed.png", "#ef4444"
-    if ph_status == 'Critical': return "grphics/pH Imbalance.png", "#ef4444"
-    if m_status == 'Warning': return "grphics/dry_corp.png", "#fbbf24"
-    if ec_status == 'Warning': return "grphics/salty_stressed.png", "#fbbf24"
-    if ph_status == 'Warning': return "grphics/pH Imbalance.png", "#fbbf24"
-    return "grphics/dry_corp.png", "#fbbf24"
+    if status == 'Optimal': return "grphics/healthy_crop.jpg", "#4edea3"
+    if m_status == 'Critical': return "grphics/dryingtodie_crop.jpg", "#ef4444"
+    if ec_status == 'Critical': return "grphics/salty_stressed.jpg", "#ef4444"
+    if ph_status == 'Critical': return "grphics/pH Imbalance.jpg", "#ef4444"
+    if m_status == 'Warning': return "grphics/dry_corp.jpg", "#fbbf24"
+    if ec_status == 'Warning': return "grphics/salty_stressed.jpg", "#fbbf24"
+    if ph_status == 'Warning': return "grphics/pH Imbalance.jpg", "#fbbf24"
+    return "grphics/dry_corp.jpg", "#fbbf24"
 
 @st.dialog("Digital Twin Audit", width="large")
 def render_plot_detail(plot_id, stats_row):
@@ -899,7 +900,7 @@ def render_farm_map(df, stats):
         with cols[i % 3]:
             st_html(f"""
                 <div class="farm-tile">
-                    <img src="data:image/png;base64,{b64}" class="tile-photo-full">
+                    <img src="data:image/jpeg;base64,{b64}" class="tile-photo-full">
                     <div class="status-tag" style="background:{color};">{row['overall_status'].upper()}</div>
                     <div class="tile-overlay">
                         <div class="label-tech">{p_id} FORENSICS</div>
@@ -1028,13 +1029,13 @@ def render_iot_command():
 
     # Pre-load icons with lru_cache behavior internally
     icons = {
-        "Gateway Hub": get_base64_img("grphics/iot_devices/Node Gateway.png"),
-        "Weather Station": get_base64_img("grphics/iot_devices/Rain Gauge.png"),
-        "Salinity Node": get_base64_img("grphics/iot_devices/EC Salinity Node.png"),
-        "Moisture Probe": get_base64_img("grphics/iot_devices/Moisture Probe.png"),
-        "Thermal Probe": get_base64_img("grphics/iot_devices/Thermal Probe.png"),
-        "pH Electrode": get_base64_img("grphics/iot_devices/pH Electrode.png"),
-        "Rain Gauge": get_base64_img("grphics/iot_devices/Rain Gauge.png")
+        "Gateway Hub": get_base64_img("grphics/iot_devices/Node Gateway.jpg"),
+        "Weather Station": get_base64_img("grphics/iot_devices/Rain Gauge.jpg"),
+        "Salinity Node": get_base64_img("grphics/iot_devices/EC Salinity Node.jpg"),
+        "Moisture Probe": get_base64_img("grphics/iot_devices/Moisture Probe.jpg"),
+        "Thermal Probe": get_base64_img("grphics/iot_devices/Thermal Probe.jpg"),
+        "pH Electrode": get_base64_img("grphics/iot_devices/pH Electrode.jpg"),
+        "Rain Gauge": get_base64_img("grphics/iot_devices/Rain Gauge.jpg")
     }
 
     # Use a row-by-row structure to fix visibility issues
@@ -1156,9 +1157,9 @@ def main():
     if "provisioning_step" not in st.session_state: st.session_state.provisioning_step = 0
 
     # 1. STYLE INJECTION (TOP)
-    bg_path = f"grphics/bg_{st.session_state.bg_mode}.png"
+    bg_path = f"grphics/bg_{st.session_state.bg_mode}.jpg"
     bg_b64 = get_base64_img(bg_path)
-    overlay_path = "grphics/enter_overlay.png"
+    overlay_path = "grphics/enter_overlay.jpg"
     overlay_b64 = get_base64_img(overlay_path)
     st_html(get_style(bg_b64, AI_ICON_B64, overlay_b64))
 
