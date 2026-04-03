@@ -3,4 +3,5 @@ google-genai
 pandas
 plotly
 openpyxl
+statsmodels
 pytest
