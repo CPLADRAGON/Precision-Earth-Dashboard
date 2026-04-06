@@ -57,6 +57,38 @@ def compute_stats(df):
     latest['ec_status'] = latest['soil_ec_ds_m'].apply(ec_level)
     latest['ph_status'] = latest['soil_ph'].apply(ph_level)
     
+    def compute_risk(row, df):
+        # Calculate moisture trend to determine risk
+        plot_data = df[df['plot_id'] == row['plot_id']].tail(10)
+        
+        # Check for immediate critical sensor states (EC/pH/Moisture)
+        if row['ec_status'] == 'Critical':
+            return "High", f"Forensic Alert: Salinity ({row['soil_ec_ds_m']:.2f} EC) is at toxic levels."
+        if row['ph_status'] == 'Critical':
+            return "High", f"Forensic Alert: pH ({row['soil_ph']:.1f}) is outside biological safety envelope."
+        
+        if len(plot_data) < 2: return "Low", "Initializing trend analysis..."
+        
+        m_start = plot_data['soil_moisture_pct'].iloc[0]
+        m_end = plot_data['soil_moisture_pct'].iloc[-1]
+        m_delta = m_end - m_start
+        
+        if m_end < 15 and m_delta < 0:
+            return "High", f"Drought Risk: Moisture dropping ({m_delta:+.1f}% recently)."
+        if m_end < 20: 
+            return "Medium", "Watch Level: Soil moisture approaching dry threshold."
+        if m_end > 35:
+            return "Medium", "Waterlogging Alert: Risk of root-zone anoxia."
+            
+        # Warning checks
+        if row['ec_status'] == 'Warning' or row['ph_status'] == 'Warning':
+            return "Medium", "Watch Level: Chemistry indicators are deviating from optimal."
+            
+        return "Low", "Stable Telemetry: No immediate forensic threats detected."
+
+
+    latest[['risk_level', 'risk_reason']] = latest.apply(lambda r: pd.Series(compute_risk(r, df)), axis=1)
+    
     def overall_status(row):
         statuses = [row['moisture_status'], row['ec_status'], row['ph_status']]
         if 'Critical' in statuses: return 'Critical'
@@ -66,6 +98,7 @@ def compute_stats(df):
     latest['overall_status'] = latest.apply(overall_status, axis=1)
     
     return latest, df
+
 
 def get_categorical_heatmap_data(df, plot_id):
     """Translates raw moisture into Drought/Normal/Saturated categories."""

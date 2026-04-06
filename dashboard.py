@@ -831,11 +831,32 @@ def render_chat_widget(stats_df, full_df=None, wide_mode=False):
         
         # ── LLM MODEL INFORMATION (v18.0) ──
         st.caption("INTELLIGENCE ENGINE: Gemini-3.1-Flash-Lite (ULTRA-LOW LATENCY FORENSIC MODEL)")
+        
+        # ── AI QUICK-SCAN BUTTONS (NEW) ──
+        st_html("<div class='label-tech' style='font-size:0.7rem; margin-bottom:5px;'>Forensic Quick-Actions</div>")
+        qa_cols = st.columns(3)
+        with qa_cols[0]:
+            if st.button("🔍 ANALYZE ANOMALIES", key="qa_anomalies", width="stretch"):
+                st.session_state.chat.append({"role": "user", "content": "Analyze the current telemetry for anomalies across all plots.", "mid": f"qa_{time.time()}"})
+                st.session_state.ai_thinking = True
+                st.rerun()
+        with qa_cols[1]:
+            if st.button("🌧️ RAINFALL IMPACT", key="qa_rain", width="stretch"):
+                st.session_state.chat.append({"role": "user", "content": "Evaluate the impact of recent rainfall on soil moisture and EC levels.", "mid": f"qa_{time.time()}"})
+                st.session_state.ai_thinking = True
+                st.rerun()
+        with qa_cols[2]:
+            if st.button("📈 PLOT SUMMARY", key="qa_summary", width="stretch"):
+                st.session_state.chat.append({"role": "user", "content": "Provide a high-level summary of all plot health statuses.", "mid": f"qa_{time.time()}"})
+                st.session_state.ai_thinking = True
+                st.rerun()
+
         if prompt := st.chat_input("Input forensic query for plot analysis...", key="tab_chat_input"):
             timestamp_id = f"msg_{time.time()}"
             if not st.session_state.get("ai_thinking", False):
                 st.session_state.chat.append({"role": "user", "content": prompt, "mid": timestamp_id})
                 st.session_state.ai_thinking = True
+
 
         chat_container = st.container(height=650) # Taller for the tab
         with chat_container:
@@ -926,19 +947,33 @@ def render_farm_map(df, stats):
         ec_badge = "badge-crit" if row['ec_status']=='Critical' else ("badge-warn" if row['ec_status']=='Warning' else "")
         ph_badge = "badge-crit" if row['ph_status']=='Critical' else ("badge-warn" if row['ph_status']=='Warning' else "")
         
+        risk_level = row.get('risk_level', 'Low')
+        # Border color synchronized with the OVERALL STATUS of the plot
+        border_color = color # From get_crop_visual(row)
+        
+        # Risk indicators still use risk_level for the internal badge
+        risk_badge_color = "#ef4444" if risk_level == "High" else ("#fbbf24" if risk_level == "Medium" else "#4edea3")
+        risk_bg = "rgba(239, 68, 68, 0.15)" if risk_level == "High" else ("rgba(251, 191, 36, 0.15)" if risk_level == "Medium" else "rgba(78, 222, 163, 0.15)")
+        
         with cols[i % 3]:
             st_html(f"""
-                <div class="farm-tile">
+                <div class="farm-tile" style="border: 5px solid {border_color}; shadow: 0 0 15px {border_color}33;">
                     <img src="data:image/jpeg;base64,{b64}" class="tile-photo-full">
                     <div class="status-tag" style="background:{color};">{row['overall_status'].upper()}</div>
                     <div class="tile-overlay">
-                        <div class="label-tech">{p_id} FORENSICS</div>
+                        <div class="label-tech" style="color:#FFF; background:rgba(0,0,0,0.6); padding:2px 8px; border-radius:4px;">{p_id} FORENSICS</div>
+                        <div style="background:{risk_bg}; border-left:4px solid {risk_badge_color}; padding:8px 12px; margin-bottom:10px; border-radius: 0 4px 4px 0; backdrop-filter: blur(2px);">
+                            <b style="color:{risk_badge_color}; font-size:0.8rem; letter-spacing:1px;">[{risk_level.upper()} FORENSIC RISK]</b><br>
+                            <span style="color:#FFF; font-size:0.7rem; font-weight:600; line-height:1.3;">{row['risk_reason']}</span>
+                        </div>
                         <div class="metric-line"><span>Moisture</span><span class="{m_badge}">{row['soil_moisture_pct']:.1f}%</span></div>
                         <div class="metric-line"><span>Salinity</span><span class="{ec_badge}">{row['soil_ec_ds_m']:.2f} EC</span></div>
                         <div class="metric-line"><span>Chemistry</span><span class="{ph_badge}">{row['soil_ph']:.2f} pH</span></div>
                         <div class="metric-line"><span>Thermal</span><span>{row.get('soil_temp_c', 0):.1f}°C</span></div>
                     </div>
                 </div>
+
+
             """)
             if st.button(f"SENSOR HUB | {p_id}", key=f"osh_{p_id}", width="stretch"):
                 st.session_state.selected_plot = p_id
@@ -1141,7 +1176,85 @@ def render_iot_command():
         </style>
     """, unsafe_allow_html=True)
 
+def render_themed_ledger(df):
+    """Renders data as a Stardew-style wooden journal/ledger."""
+    st_html("""
+    <style>
+        .ledger-container {
+            background-color: #f3e5ab; /* Parchment */
+            border: 8px solid #5d4037; /* Wooden Border */
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            max-height: 800px;
+            overflow-y: auto;
+            image-rendering: pixelated;
+        }
+        .ledger-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #3e2723;
+        }
+        .ledger-table th {
+            background-color: #5d4037;
+            color: #fff176;
+            font-family: 'Silkscreen', cursive;
+            padding: 12px;
+            text-align: left;
+            position: sticky;
+            top: -20px;
+            z-index: 10;
+        }
+        .ledger-table td {
+            padding: 10px 12px;
+            border-bottom: 1px dashed rgba(62, 39, 35, 0.2);
+            font-size: 0.9rem;
+        }
+        .ledger-table tr:nth-child(even) {
+            background-color: rgba(93, 64, 55, 0.05);
+        }
+        .ledger-table tr:hover {
+            background-color: rgba(93, 64, 55, 0.1);
+        }
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+    </style>
+    """)
+    
+    # Header
+    html = '<div class="ledger-container"><table class="ledger-table"><thead><tr>'
+    cols = ['timestamp', 'plot_id', 'soil_moisture_pct', 'soil_ec_ds_m', 'soil_ph', 'rainfall_mm']
+    for c in cols:
+        html += f'<th>{c.replace("_", " ").upper()}</th>'
+    html += '</tr></thead><tbody>'
+    
+    # Rows (Display last 100 for performance)
+    for _, row in df.sort_values('timestamp', ascending=False).head(100).iterrows():
+        html += '<tr>'
+        html += f'<td>{row["timestamp"].strftime("%Y-%m-%d %H:%M")}</td>'
+        
+        # Color indicator for plot
+        p_color = "#4edea3" if row['soil_moisture_pct'] > 20 else "#ef4444"
+        html += f'<td><span class="status-dot" style="background-color: {p_color};"></span>{row["plot_id"]}</td>'
+        
+        html += f'<td>{row["soil_moisture_pct"]:.1f}%</td>'
+        html += f'<td>{row["soil_ec_ds_m"]:.2f}</td>'
+        html += f'<td>{row["soil_ph"]:.1f}</td>'
+        html += f'<td>{row["rainfall_mm"]:.1f} mm</td>'
+        html += '</tr>'
+        
+    html += '</tbody></table></div>'
+    st_html(html)
+
 def main():
+
     if "chat" not in st.session_state: 
         st.session_state.chat = [
             {"role": "assistant", "content": "Greetings, Researcher. I am the **Precision Earth AI Advisor**, powered by **Gemini-3.1-Flash-Lite**. I specialize in real-time sensor telemetry analysis, identifying forensic soil health patterns (pH, EC, Moisture), and recommending automated hardware protocols like **Irrigation pulses** and **pH Neutralization**. I am standing by to assist with your plantation oversight.", "mid": "init_msg"}
@@ -1303,7 +1416,7 @@ def main():
     render_header()
     stats = active_stats # Already computed above
     
-    tabs = st.tabs(["FIELD MAP", "FORENSIC WORKBENCH", "PROTOCOLS", "EVOLUTION", "AI ADVISOR", "IoT COMMAND"])
+    tabs = st.tabs(["FIELD MAP", "FORENSIC WORKBENCH", "PROTOCOLS", "EVOLUTION", "AI ADVISOR", "IoT COMMAND", "DATA LEDGER", "STRATEGIC OVERLAY"])
     with tabs[0]: render_farm_map(full_df, stats)
     with tabs[1]: 
         st.subheader("Data Science Master Workbench")
@@ -1324,25 +1437,39 @@ def main():
                     st.write("Shows if your sensor readings are flat and stable. **Spikes or sharp drops** mean the environment changed too quickly for plants to adapt. The blue bars represent rainfall intensity.")
             st.caption("24-Hour Plot Stability Monitoring.")
             
+            # (Plot reconstruction logic was moved to a separate function or handled inline in my previous attempt, but I'll make sure it's consistent)
+            # Actually, I updated the fig logic in a previous chunk that succeeded. 
+            # I need to match the actual content of the file now.
+            
+            # Wait, I updated lines 1327-1345 in the previous successful call.
+            # I should read the file again to be safe.
+            
             fig = make_subplots(specs=[[{"secondary_y": True}]])
-            fig.add_trace(go.Bar(x=daily_rain['date'], y=daily_rain['rainfall_mm'], name="Daily Rainfall", 
-                                marker_color="#38bdf8", opacity=0.4), secondary_y=True)
+            # Rainfall as bars on secondary axis
+            fig.add_trace(go.Bar(x=pdf['timestamp'], y=pdf['rainfall_mm'], name="🌧️ Rainfall (mm)", 
+                                marker_color="#38bdf8", opacity=0.3), secondary_y=True)
+            # Moisture as primary line
             fig.add_trace(go.Scatter(x=pdf['timestamp'], y=pdf['soil_moisture_pct'], name="💧 Moisture (%)", 
-                                     mode="lines", fill="none", line=dict(color="#4EDEA3", width=3)), secondary_y=False)
+                                     mode="lines", line=dict(color="#4EDEA3", width=4)), secondary_y=False)
+            
+            # Additional metrics
             fig.add_trace(go.Scatter(x=pdf['timestamp'], y=pdf.get('soil_temp_c', 0), name="🌡️ Temp (°C)", 
-                                     mode="lines", line=dict(color="#fbbf24", width=3, dash='dot')), secondary_y=False)
+                                     mode="lines", line=dict(color="#fbbf24", width=2, dash='dot')), secondary_y=False)
             
             fig.update_layout(
-                height=400, 
+                height=450, 
                 plot_bgcolor='rgba(0,0,0,0)', 
+                paper_bgcolor='rgba(0,0,0,0)',
                 font_color="#FFF",
                 margin=dict(l=10, r=10, t=10, b=10),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                hovermode="x unified"
             )
-            fig.update_xaxes(title_text="Telemetric Timeline")
-            fig.update_yaxes(title_text="Primary Metrics (Moisture/Temp)", secondary_y=False)
-            fig.update_yaxes(title_text="Rainfall Intensity (mm)", secondary_y=True)
-            st.plotly_chart(fig, width="stretch")
+            fig.update_xaxes(showgrid=False, title_text="Telemetric Timeline")
+            fig.update_yaxes(showgrid=True, gridcolor="rgba(255,255,255,0.1)", title_text="Moisture (%) / Temp (°C)", secondary_y=False)
+            fig.update_yaxes(showgrid=False, title_text="Rainfall Intensity (mm)", secondary_y=True)
+            st.plotly_chart(fig, use_container_width=True)
+
             
             st.divider()
             
@@ -1406,6 +1533,27 @@ def main():
     with tabs[3]: render_evolution()
     with tabs[4]: render_chat_widget(stats_df=stats, full_df=full_df, wide_mode=True)
     with tabs[5]: render_iot_command()
+    with tabs[6]:
+        st_html("<div class='label-tech'>Master Data Ledger</div>")
+        st.caption("Viewing raw sensor streams and telemetry logs.")
+        render_themed_ledger(full_df)
+        st.download_button("EXPORT FORENSIC DATA", data=full_df.to_csv(index=False), file_name="forensic_telemetry.csv", mime="text/csv")
+
+    with tabs[7]:
+        st_html("<div class='label-tech'>Strategic Expansion Roadmap</div>")
+        st.markdown("""
+        ### Phase 2: Biological Integration
+        - **NPK Inline Probes**: Real-time mapping of Nitrogen, Phosphorus, and Potassium gradients.
+        - **Root-Zone O2 Sensors**: Monitoring soil aeration to prevent root rot in saturated zones.
+        
+        ### Phase 3: Satellite Correlation
+        - **NDVI Vegetation Index Overlay**: Correlating soil health with actual plant vigor from orbital data.
+        - **Evapotranspiration Tracking**: Modeling water loss to predict irrigation needs 48 hours in advance.
+        
+        ### Phase 4: Autonomous Closed-Loop
+        - **AI-Managed Irrigation**: Removing manual intervention by allowing Gemini to trigger protocols based on risk forecasts.
+        """)
+
     
     if st.session_state.selected_plot:
         p_id = st.session_state.selected_plot
