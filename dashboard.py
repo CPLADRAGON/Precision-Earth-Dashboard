@@ -27,21 +27,12 @@ except Exception:
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 # --- HELPER UTILS ---
-@st.cache_data
-def get_audio_base64(file_path):
-    if not os.path.exists(file_path): return ""
-    with open(file_path, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
+# --- HELPER UTILS ---
 def render_bgm(file_path, play=True):
-    audio_b64 = get_audio_base64(file_path)
-    if not audio_b64: return
+    if not os.path.exists(file_path): return
     if play:
-        st.markdown("<style>#bgm-player-wrapper { display: none; }</style>", unsafe_allow_html=True)
-        st.markdown('<div id="bgm-player-wrapper">', unsafe_allow_html=True)
-        st.audio(data=f"data:audio/mp3;base64,{audio_b64}", autoplay=True, loop=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown("<style>div[data-testid='stAudio'] { display: none !important; }</style>", unsafe_allow_html=True)
+        st.audio(file_path, format="audio/mpeg", autoplay=True, loop=True)
 
 # --- BRANDING UTILS ---
 @st.cache_data
