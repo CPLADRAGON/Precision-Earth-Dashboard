@@ -1,5 +1,0 @@
-{"type":"click","text":"A\n      \n        Option A: Popover Card\n        A floating card that appears when the \"?\" is clicked. Good for long, helpful explanations.","choice":"popover","id":null,"timestamp":1775112480454}
-{"type":"click","text":"B\n      \n        Option B: Inline Hint\n        A small text area that appears directly below the plot title. Good for quick \"at-a-glance\" meanings.","choice":"inline","id":null,"timestamp":1775112491302}
-{"type":"click","text":"A\n      \n        Option A: Popover Card\n        A floating card that appears when the \"?\" is clicked. Good for long, helpful explanations.","choice":"popover","id":null,"timestamp":1775112493006}
-{"type":"click","text":"B\n      \n        Option B: Inline Hint\n        A small text area that appears directly below the plot title. Good for quick \"at-a-glance\" meanings.","choice":"inline","id":null,"timestamp":1775112494221}
-{"type":"click","text":"A\n      \n        Option A: Popover Card\n        A floating card that appears when the \"?\" is clicked. Good for long, helpful explanations.","choice":"popover","id":null,"timestamp":1775112494862}
