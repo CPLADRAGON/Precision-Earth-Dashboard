@@ -29,13 +29,16 @@ wheels/
 venv/
 ENV/
 
-# IDEs
+# IDEs / Tools
 .vscode/
 .idea/
+.superpowers/
 
 # Temporary / OS
 .DS_Store
 Thumbs.db
+desktop.ini
+*.ini
 
 # CA2 Specific
 temp_data/

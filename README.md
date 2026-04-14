@@ -14,6 +14,17 @@
 *   **Digital Twin Audits**: Deep-dive statistical analysis with Plotly-driven timelines and correlation matrices for precise field diagnostics.
 *   **Mobile Optimized**: Fully responsive UI/UX designed for both desktop workstations and in-field mobile phone usage.
 
+### 🖼️ Dashboard Previews
+
+**1. Global Precision Map**  
+<img src="grphics/screenshots/01_global_map.png" alt="Global Dashboard Map" width="800"/>
+
+**2. Forensic Health Envelopes**  
+<img src="grphics/screenshots/03_02_workbench_Health_Envelopes.png" alt="Workbench Heath Envelopes" width="800"/>
+
+**3. AI Agronomist Advisor**  
+<img src="grphics/screenshots/04_ai_advisor.png" alt="Gemini AI Advisor" width="800"/>
+
 ---
 
 ## 🚀 Quick Start (Local Run)
@@ -52,11 +63,14 @@ To run the dashboard locally, follow these steps:
 ## ⚖️ AI Use Declaration
 In accordance with academic standards for **EE4409**, the following AI tools were utilized:
 *   **ChatGPT (OpenAI)**: Brainstorming initial concept pillars and researching IoT communication standards (LoRaWAN/MQTT).
-*   **Antigravity (Google Coding Agent)**: Primary technical co-author. Antigravity implemented the core logic, optimized the responsive mobile layout, and drafted the "Dashboard Design" documentation.
-*   **Google Gemini**: Linguistic refinement and technical documentation rephrasing for professional academic alignment.
+*   **Antigravity (Google Coding Agent)**: Primary technical co-author. Antigravity implemented the core logic, optimized the responsive mobile layout, generated the analytical peer review PDF, and drafted the "Dashboard Design" documentation. 
+*   **Google Gemini**: Linguistic refinement and technical documentation rephrasing for professional academic alignment, as well as brainstorming potential suggestions for improvements in the peer assessments.
 
 ---
 
 ## 🏛️ Project Credits
+**Author:** WANG BOYU 
 Dedicated to the **EE4409 CA2** Precision Agriculture Submission. 
 Developed with a focus on **Gamified Industrial IoT** and **User-Centric Forensic Diagnostics**.
+
+*A special note on design:* The UI, pixel-art retro themes, and background audio aesthetics were heavily inspired by the critically acclaimed game **Stardew Valley**. By bridging the gap between cozy farming simulators and hardcore industrial telemetry, this project aims to prove that data science can be visually immersive and deeply engaging.
